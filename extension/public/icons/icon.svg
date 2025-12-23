@@ -1,0 +1,28 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="128" height="128" rx="24" fill="url(#gradient)"/>
+  
+  <!-- Bookmark Icon -->
+  <path d="M64 28C52.9543 28 44 36.9543 44 48V100L64 88L84 100V48C84 36.9543 75.0457 28 64 28Z" 
+        fill="white" 
+        fill-opacity="0.9"/>
+  
+  <!-- Glow Effect -->
+  <path d="M64 28C52.9543 28 44 36.9543 44 48V100L64 88L84 100V48C84 36.9543 75.0457 28 64 28Z" 
+        fill="url(#glow)" 
+        fill-opacity="0.3"/>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="gradient" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#8b5cf6"/>
+      <stop offset="50%" stop-color="#ec4899"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    
+    <radialGradient id="glow" cx="64" cy="64" r="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

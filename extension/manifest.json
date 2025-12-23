@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Hame Bookmark",
+  "description": "Modern bookmark manager with cloud sync and authentication",
+  "version": "1.0.0",
+  "author": "IlhameID",
+  
+  "action": {
+    "default_popup": "index.html"
+  },
+  
+  "permissions": [
+    "storage",
+    "tabs"
+  ],
+  
+  "host_permissions": [
+    "https://*/*",
+    "http://*/*"
+  ],
+  
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
