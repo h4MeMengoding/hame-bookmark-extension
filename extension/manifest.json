@@ -1,12 +1,23 @@
 {
   "manifest_version": 3,
   "name": "Hame Bookmark",
-  "description": "Modern bookmark manager with cloud sync and authentication",
-  "version": "1.0.0",
+  "description": "A smarter way to manage your bookmarks directly from your extension. By ilhame.id",
+  "version": "1.1.4",
   "author": "IlhameID",
   
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  
   "action": {
-    "default_popup": "index.html"
+    "default_popup": "index.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   },
   
   "permissions": [
