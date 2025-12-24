@@ -84,6 +84,3 @@ jobs:
             
             ## 📝 Changes
             See commit history for details.
-          name: bookmark-extension-v${{ steps.get_version.outputs.version }}
-          path: ./extension/dist/
-          retention-days: 30
