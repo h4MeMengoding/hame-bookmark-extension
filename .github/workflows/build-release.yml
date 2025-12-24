@@ -4,13 +4,13 @@ on:
   push:
     branches:
       - main
-    tags:
-      - 'v*'
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout code
@@ -39,35 +39,51 @@ jobs:
             cp -r public/icons dist/
           fi
       
-      - name: Get version from manifest
+      - name: Get version and timestamp
         id: get_version
         working-directory: ./extension
         run: |
           VERSION=$(node -p "require('./manifest.json').version")
+          TIMESTAMP=$(date +'%Y%m%d-%H%M%S')
+          RELEASE_NAME="v${VERSION}-${TIMESTAMP}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "timestamp=$TIMESTAMP" >> $GITHUB_OUTPUT
+          echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
           echo "Extension version: $VERSION"
+          echo "Release name: $RELEASE_NAME"
       
       - name: Create release archive
         working-directory: ./extension
         run: |
           mkdir -p releases
-          cd distbuild artifact (always)
-        uses: actions/upload-artifact@v4
-        with:
-          name: bookmark-extension-v${{ steps.get_version.outputs.version }}
-          path: ./extension/releases/bookmark-extension-v${{ steps.get_version.outputs.version }}.zip
-          retention-days: 30
+          cd dist
+          zip -r ../releases/bookmark-extension-${{ steps.get_version.outputs.release_name }}.zip .
       
-      - name: Create GitHub Release (only for tags)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: ./extension/releases/bookmark-extension-v${{ steps.get_version.outputs.version }}.zip
+          tag_name: ${{ steps.get_version.outputs.release_name }}
+          name: Extension v${{ steps.get_version.outputs.version }} - Build ${{ steps.get_version.outputs.timestamp }}
+          files: ./extension/releases/bookmark-extension-${{ steps.get_version.outputs.release_name }}.zip
           draft: false
           prerelease: false
           generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          body: |
+            🔖 Bookmark Manager Extension - Auto Build
+            
+            **Version:** ${{ steps.get_version.outputs.version }}
+            **Build Time:** ${{ steps.get_version.outputs.timestamp }}
+            **Commit:** ${{ github.sha }}
+            
+            ## 📥 Installation
+            1. Download `bookmark-extension-${{ steps.get_version.outputs.release_name }}.zip`
+            2. Extract the ZIP file
+            3. Open Chrome → `chrome://extensions/`
+            4. Enable "Developer mode"
+            5. Click "Load unpacked" → Select extracted folder
+            
+            ## 📝 Changes
+            See commit history for details.
           name: bookmark-extension-v${{ steps.get_version.outputs.version }}
           path: ./extension/dist/
           retention-days: 30
