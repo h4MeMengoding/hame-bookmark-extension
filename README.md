@@ -259,26 +259,45 @@ cd extension
 npm run dev    # Auto rebuild on changes
 ```
 
-### Untuk Production
+### Untuk Production/Distribution
+
+**Option 1: Manual (Local)**
 ```bash
 cd extension
-npm run build    # Build ke folder dist/
-npm run package  # Build + Create ZIP untuk distribusi
+npm run package  # Build + Create ZIP
+# ZIP tersimpan di extension/releases/
 ```
 
-**Package script** akan otomatis:
-- Install dependencies
-- Build extension
-- Copy manifest & icons
-- Create ZIP di `extension/releases/`
+**Option 2: Otomatis (GitHub Actions)**
 
-### Release ke GitHub
-1. Update version di `extension/manifest.json`
-2. Run `npm run package`
-3. Create GitHub Release & upload ZIP
-4. Users download & install!
+Setiap kali Anda push ke GitHub, extension akan otomatis di-build:
 
-**GitHub Actions** akan auto-build jika Anda create release tag.
+```bash
+# Push biasa ke main branch
+git add .
+git commit -m "update: fitur baru"
+git push origin main
+# ✅ GitHub Actions auto-build
+# ✅ ZIP tersimpan sebagai artifact (download dari Actions tab)
+```
+
+**Untuk Create Release:**
+```bash
+# 1. Update version di extension/manifest.json
+# 2. Commit & push
+git add extension/manifest.json
+git commit -m "chore: bump version to v1.0.0"
+git push origin main
+
+# 3. Create tag & push
+git tag v1.0.0
+git push origin v1.0.0
+# ✅ GitHub Actions otomatis create GitHub Release dengan ZIP!
+```
+
+**Download ZIP:**
+- **Artifact** (setiap push): GitHub repo → Actions tab → Pilih workflow → Download artifact
+- **Release** (dengan tag): GitHub repo → Releases → Download ZIP
 
 ---
 
