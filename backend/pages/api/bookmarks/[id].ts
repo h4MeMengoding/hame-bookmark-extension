@@ -2,18 +2,19 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { prisma } from '../../../lib/prisma';
 import { authenticate } from '../../../middleware/auth';
 
-type DeleteResponse = {
-  message: string;
-} | {
-  error: string;
+type ApiResponse = {
+  message?: string;
+  bookmark?: any;
+  error?: string;
 };
 
 /**
+ * PUT /api/bookmarks/[id] - Update a bookmark
  * DELETE /api/bookmarks/[id] - Delete a bookmark
  */
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<DeleteResponse>
+  res: NextApiResponse<ApiResponse>
 ) {
   // Authenticate user
   const auth = await authenticate(req, res);
@@ -27,6 +28,44 @@ export default async function handler(
   }
 
   try {
+    // PUT - Update bookmark
+    if (req.method === 'PUT') {
+      const { title, url, categoryId, tags } = req.body;
+
+      // Validasi input
+      if (!title || !url) {
+        return res.status(400).json({ error: 'Title and URL are required' });
+      }
+
+      // Cek apakah bookmark milik user
+      const existingBookmark = await prisma.bookmark.findFirst({
+        where: {
+          id,
+          userId: user.id,
+        },
+      });
+
+      if (!existingBookmark) {
+        return res.status(404).json({ error: 'Bookmark not found' });
+      }
+
+      // Update bookmark
+      const updatedBookmark = await prisma.bookmark.update({
+        where: { id },
+        data: {
+          title,
+          url,
+          categoryId: categoryId || null,
+          tags: tags !== undefined ? tags : existingBookmark.tags,
+        },
+      });
+
+      return res.status(200).json({ 
+        message: 'Bookmark updated successfully',
+        bookmark: updatedBookmark 
+      });
+    }
+
     // DELETE - Delete bookmark
     if (req.method === 'DELETE') {
       // Cek apakah bookmark milik user
@@ -52,7 +91,7 @@ export default async function handler(
     // Method not allowed
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
-    console.error('Delete bookmark error:', error);
+    console.error('Bookmark API error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 }

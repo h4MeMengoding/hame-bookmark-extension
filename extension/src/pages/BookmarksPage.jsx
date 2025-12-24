@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Bookmark, Plus, LogOut, Loader2 } from 'lucide-react';
-import { get, post, del } from '../services/api';
+import { get, post, put, del } from '../services/api';
 import { getToken, clearStorage, getUserData } from '../services/storage';
 import Header from '../components/Header';
 import BookmarkForm from '../components/BookmarkForm';
@@ -26,6 +26,11 @@ const BookmarksPage = ({ onLogout }) => {
   const [deleteMode, setDeleteMode] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toast, setToast] = useState(null);
+  const [defaultCategory, setDefaultCategory] = useState(null);
+  const [editingBookmark, setEditingBookmark] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('date'); // 'date', 'alphabetical', 'url'
+  const [activeFilters, setActiveFilters] = useState(['all']); // Array for multi-select
 
   useEffect(() => {
     fetchBookmarks();
@@ -72,20 +77,45 @@ const BookmarksPage = ({ onLogout }) => {
     await fetchBookmarks(false);
   };
 
-  const handleAddBookmark = async (title, url, categoryId) => {
+  const handleAddUrlInCategory = () => {
+    // Set defaultCategory berdasarkan activeFilters (ambil yang pertama jika multi-select)
+    if (activeFilters.length > 0 && !activeFilters.includes('all')) {
+      setDefaultCategory(activeFilters[0]);
+    }
+    setShowForm(true);
+  };
+
+  const handleEditBookmark = (bookmark) => {
+    setEditingBookmark(bookmark);
+    setShowForm(true);
+  };
+
+  const handleAddBookmark = async (title, url, categoryId, tags = []) => {
     try {
       const token = await getToken();
-      const newBookmark = await post('/api/bookmarks', { title, url, categoryId }, token);
-      setBookmarks([newBookmark.bookmark, ...bookmarks]);
+      
+      // Jika sedang edit, update bookmark
+      if (editingBookmark) {
+        const updatedBookmark = await put(`/api/bookmarks/${editingBookmark.id}`, { title, url, categoryId, tags }, token);
+        setBookmarks(bookmarks.map(b => b.id === editingBookmark.id ? updatedBookmark.bookmark : b));
+        setToast({ type: 'success', message: 'Bookmark updated successfully!' });
+      } else {
+        // Jika tidak, tambah bookmark baru
+        const newBookmark = await post('/api/bookmarks', { title, url, categoryId, tags }, token);
+        setBookmarks([newBookmark.bookmark, ...bookmarks]);
+        setToast({ type: 'success', message: 'Bookmark added successfully!' });
+      }
+      
       setShowForm(false);
+      setDefaultCategory(null);
+      setEditingBookmark(null);
       setError('');
-      setToast({ type: 'success', message: 'Bookmark added successfully!' });
     } catch (err) {
       const errorMsg = err.message === 'Failed to fetch'
-        ? 'Cannot add bookmark. Backend server is down.'
-        : 'Failed to add bookmark';
+        ? `Cannot ${editingBookmark ? 'update' : 'add'} bookmark. Backend server is down.`
+        : `Failed to ${editingBookmark ? 'update' : 'add'} bookmark`;
       setErrorNotification(errorMsg);
-      console.error('Add error:', err);
+      console.error(`${editingBookmark ? 'Update' : 'Add'} error:`, err);
     }
   };
 
@@ -170,17 +200,40 @@ const BookmarksPage = ({ onLogout }) => {
     }
   };
 
-  // Filter bookmarks berdasarkan kategori
-  const filteredBookmarks = activeFilter === 'all' 
-    ? bookmarks 
-    : bookmarks.filter(bookmark => {
-        if (bookmark.categoryId === activeFilter) return true;
-        // Fallback to auto-categorize for old bookmarks without category
-        if (!bookmark.categoryId) {
-          return categorizeBookmark(bookmark.url) === activeFilter;
-        }
-        return false;
-      });
+  // Filter, Search, dan Sort bookmarks
+  const filteredBookmarks = bookmarks
+    // Filter by categories (multi-select)
+    .filter(bookmark => {
+      if (activeFilters.includes('all')) return true;
+      if (activeFilters.includes(bookmark.categoryId)) return true;
+      // Fallback to auto-categorize for old bookmarks without category
+      if (!bookmark.categoryId) {
+        return activeFilters.some(filter => categorizeBookmark(bookmark.url) === filter);
+      }
+      return false;
+    })
+    // Search by title or URL
+    .filter(bookmark => {
+      if (!searchQuery.trim()) return true;
+      const query = searchQuery.toLowerCase();
+      return (
+        bookmark.title.toLowerCase().includes(query) ||
+        bookmark.url.toLowerCase().includes(query)
+      );
+    })
+    // Sort bookmarks
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'alphabetical':
+          return a.title.localeCompare(b.title);
+        case 'url':
+          return a.url.localeCompare(b.url);
+        case 'date':
+        default:
+          // Newest first (assuming bookmarks have createdAt or use array order)
+          return bookmarks.indexOf(b) - bookmarks.indexOf(a);
+      }
+    });
 
   return (
     <div className="min-h-screen bg-neo-cream">
@@ -200,6 +253,8 @@ const BookmarksPage = ({ onLogout }) => {
         onDeleteModeToggle={() => setDeleteMode(!deleteMode)}
         onRefresh={handleRefresh}
         isRefreshing={isRefreshing}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       {/* Profile Menu */}
@@ -225,9 +280,15 @@ const BookmarksPage = ({ onLogout }) => {
           <div className="mb-6 fade-in">
             <BookmarkForm
               onSubmit={handleAddBookmark}
-              onCancel={() => setShowForm(false)}
+              onCancel={() => {
+                setShowForm(false);
+                setDefaultCategory(null);
+                setEditingBookmark(null);
+              }}
               categories={categories}
               onCreateCategory={handleAddCategory}
+              defaultCategory={defaultCategory}
+              editingBookmark={editingBookmark}
             />
           </div>
         )}
@@ -245,10 +306,12 @@ const BookmarksPage = ({ onLogout }) => {
         {/* Filter Chips */}
         {!isLoading && bookmarks.length > 0 && (
           <FilterChips 
-            activeFilter={activeFilter}
-            onFilterChange={setActiveFilter}
+            activeFilters={activeFilters}
+            onFilterChange={setActiveFilters}
             categories={categories}
             onAddCategory={() => setShowCategoryForm(!showCategoryForm)}
+            sortBy={sortBy}
+            onSortChange={setSortBy}
           />
         )}
 
@@ -287,26 +350,65 @@ const BookmarksPage = ({ onLogout }) => {
                 viewMode === 'compact' ? 'col-span-6' : 'col-span-2'
               }`}>
                 <p className="text-black font-bold text-lg">
-                  No bookmarks in this category
+                  {searchQuery ? `No bookmarks found for "${searchQuery}"` : 'No bookmarks in this category'}
                 </p>
                 <button
-                  onClick={() => setActiveFilter('all')}
+                  onClick={() => {
+                    setActiveFilters(['all']);
+                    setSearchQuery('');
+                  }}
                   className="mt-4 text-black font-bold underline"
                 >
-                  Show all bookmarks
+                  Clear filters
                 </button>
               </div>
             ) : (
-              filteredBookmarks.map((bookmark) => (
-                <BookmarkCard
-                  key={bookmark.id}
-                  bookmark={bookmark}
-                  onOpen={handleOpenBookmark}
-                  onDelete={handleDeleteBookmark}
-                  viewMode={viewMode}
-                  deleteMode={deleteMode}
-                />
-              ))
+              <>
+                {/* Add URL Button - only show when filtering by category */}
+                {!activeFilters.includes('all') && !searchQuery && (
+                  viewMode === 'compact' ? (
+                    <div className="flex flex-col items-center cursor-pointer group transition-all active:scale-95">
+                      <button
+                        onClick={handleAddUrlInCategory}
+                        className="w-14 h-14 rounded-xl bg-neo-blue border-3 border-black shadow-brutal-sm hover:shadow-brutal flex items-center justify-center mb-1.5 transition-all"
+                      >
+                        <Plus className="w-8 h-8 text-black" strokeWidth={3} />
+                      </button>
+                      <p className="text-black font-semibold text-[10px] text-center leading-tight px-0.5">
+                        Add URL
+                      </p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleAddUrlInCategory}
+                      className="bg-neo-blue rounded-xl p-3 border-3 border-black shadow-brutal hover:shadow-brutal-sm cursor-pointer transition-all active:shadow-none"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-lg bg-white border-3 border-black flex items-center justify-center flex-shrink-0">
+                          <Plus className="w-8 h-8 text-black" strokeWidth={3} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-black font-bold text-xs leading-tight">
+                            Add URL
+                          </h3>
+                        </div>
+                      </div>
+                    </button>
+                  )
+                )}
+                
+                {filteredBookmarks.map((bookmark) => (
+                  <BookmarkCard
+                    key={bookmark.id}
+                    bookmark={bookmark}
+                    onOpen={handleOpenBookmark}
+                    onDelete={handleDeleteBookmark}
+                    onEdit={handleEditBookmark}
+                    viewMode={viewMode}
+                    deleteMode={deleteMode}
+                  />
+                ))}
+              </>
             )}
           </div>
         )}

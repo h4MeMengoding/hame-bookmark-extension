@@ -1,15 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Save, X, Link as LinkIcon, FileText, Tag, Sparkles, Plus, ChevronDown } from 'lucide-react';
 
-const BookmarkForm = ({ onSubmit, onCancel, categories = [], onCreateCategory }) => {
-  const [title, setTitle] = useState('');
-  const [url, setUrl] = useState('');
-  const [categoryId, setCategoryId] = useState('');
+const BookmarkForm = ({ onSubmit, onCancel, categories = [], onCreateCategory, defaultCategory = null, editingBookmark = null }) => {
+  const [title, setTitle] = useState(editingBookmark?.title || '');
+  const [url, setUrl] = useState(editingBookmark?.url || '');
+  const [categoryId, setCategoryId] = useState(editingBookmark?.categoryId || defaultCategory || '');
   const [categorySearch, setCategorySearch] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [tags, setTags] = useState(editingBookmark?.tags || []);
+  const [tagInput, setTagInput] = useState('');
   const dropdownRef = useRef(null);
+
+  // Set initial category search if defaultCategory or editingBookmark provided
+  useEffect(() => {
+    const catId = editingBookmark?.categoryId || defaultCategory;
+    if (catId) {
+      const category = categories.find(cat => cat.id === catId);
+      if (category) {
+        setCategorySearch(category.name);
+      }
+    }
+  }, [defaultCategory, editingBookmark, categories]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -52,6 +65,23 @@ const BookmarkForm = ({ onSubmit, onCancel, categories = [], onCreateCategory })
         setShowCategoryDropdown(false);
       }
     }
+  };
+
+  // Handle add tag
+  const handleAddTag = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const tag = tagInput.trim();
+      if (tag && !tags.includes(tag)) {
+        setTags([...tags, tag]);
+        setTagInput('');
+      }
+    }
+  };
+
+  // Handle remove tag
+  const handleRemoveTag = (tagToRemove) => {
+    setTags(tags.filter(tag => tag !== tagToRemove));
   };
 
   // Handle Enter key in category search
@@ -120,10 +150,11 @@ const BookmarkForm = ({ onSubmit, onCancel, categories = [], onCreateCategory })
 
     setIsSubmitting(true);
     try {
-      await onSubmit(title.trim(), url.trim(), categoryId || null);
+      await onSubmit(title.trim(), url.trim(), categoryId || null, tags);
       setTitle('');
       setUrl('');
       setCategoryId('');
+      setTags([]);
     } catch (error) {
       console.error('Submit error:', error);
     } finally {
@@ -136,7 +167,7 @@ const BookmarkForm = ({ onSubmit, onCancel, categories = [], onCreateCategory })
       <div className="flex items-center justify-between mb-5">
         <h3 className="text-xl font-black text-black flex items-center gap-2">
           <Save className="w-6 h-6" strokeWidth={3} />
-          Add New Bookmark
+          {editingBookmark ? 'Edit Bookmark' : 'Add New Bookmark'}
         </h3>
         <button
           onClick={onCancel}
@@ -277,6 +308,51 @@ const BookmarkForm = ({ onSubmit, onCancel, categories = [], onCreateCategory })
               💡 Type to search, or press Enter to create new
             </p>
           )}
+        </div>
+
+        {/* Tags Input */}
+        <div>
+          <label className="block text-sm font-bold text-black mb-2">
+            Tags (Optional)
+          </label>
+          <div className="space-y-2">
+            {/* Tag chips */}
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-neo-yellow rounded-lg border-2 border-black font-bold text-xs"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="hover:text-red-600 transition-colors"
+                    >
+                      <X className="w-3 h-3" strokeWidth={3} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {/* Tag input */}
+            <div className="relative">
+              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black" strokeWidth={2.5} />
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleAddTag}
+                className="w-full bg-neo-orange text-black font-semibold pl-12 pr-4 py-3 rounded-lg border-3 border-black focus:border-black transition-all placeholder-gray-500"
+                placeholder="Type and press Enter to add tags"
+                disabled={isSubmitting}
+              />
+            </div>
+            <p className="text-xs text-black font-semibold opacity-70">
+              💡 Press Enter or comma to add multiple tags
+            </p>
+          </div>
         </div>
 
         {/* Actions */}

@@ -68,6 +68,13 @@ export const post = (endpoint, body, token) => {
 };
 
 /**
+ * PUT request
+ */
+export const put = (endpoint, body, token) => {
+  return apiRequest(endpoint, { method: 'PUT', body, token });
+};
+
+/**
  * DELETE request
  */
 export const del = (endpoint, token) => {

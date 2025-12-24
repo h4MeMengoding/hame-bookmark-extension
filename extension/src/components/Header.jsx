@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Grid3x3, List, Trash2, RefreshCw, User } from 'lucide-react';
+import { Plus, Grid3x3, List, Trash2, RefreshCw, User, Search } from 'lucide-react';
 
 const Header = ({ 
   onProfileClick, 
@@ -9,7 +9,9 @@ const Header = ({
   deleteMode,
   onDeleteModeToggle,
   onRefresh,
-  isRefreshing
+  isRefreshing,
+  searchQuery,
+  onSearchChange
 }) => {
   return (
     <div className="bg-neo-yellow border-b-4 border-black">
@@ -22,6 +24,20 @@ const Header = ({
               alt="Hame Bookmark" 
               className="h-8"
             />
+          </div>
+
+          {/* Search Bar */}
+          <div className="flex-1 max-w-md mx-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-black" strokeWidth={3} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => onSearchChange(e.target.value)}
+                placeholder="Search bookmarks..."
+                className="w-full pl-10 pr-4 py-2 rounded-lg border-3 border-black font-bold text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              />
+            </div>
           </div>
 
           {/* Actions */}
@@ -67,7 +83,7 @@ const Header = ({
               title="Add Bookmark"
             >
               <Plus className="w-4 h-4" strokeWidth={3} />
-              <span className="text-xs">Add</span>
+              <span className="text-xs">URL</span>
             </button>
             
             {/* Profile Button */}

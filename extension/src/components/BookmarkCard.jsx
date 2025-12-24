@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ExternalLink, Trash2, X } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
 
-const BookmarkCard = ({ bookmark, onOpen, onDelete, viewMode = 'compact', deleteMode = false }) => {
+const BookmarkCard = ({ bookmark, onOpen, onDelete, onEdit, viewMode = 'compact', deleteMode = false }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -31,9 +31,11 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, viewMode = 'compact', delete
     }
   };
 
-  const handleLongPress = (e) => {
+  const handleRightClick = (e) => {
     e.preventDefault();
-    setShowMenu(!showMenu);
+    if (!deleteMode && onEdit) {
+      onEdit(bookmark);
+    }
   };
 
   // Get favicon dengan service yang lebih akurat - try direct favicon first
@@ -88,6 +90,7 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, viewMode = 'compact', delete
     return (
       <div
         onClick={handleClick}
+        onContextMenu={handleRightClick}
         className={`
           bg-${randomColor} rounded-xl p-3 border-3 border-black 
           shadow-brutal hover:shadow-brutal-sm cursor-pointer 
@@ -115,6 +118,24 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, viewMode = 'compact', delete
             <p className="text-black text-[10px] font-semibold truncate opacity-60">
               {new URL(bookmark.url).hostname.replace('www.', '')}
             </p>
+            {/* Tags */}
+            {bookmark.tags && bookmark.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                {bookmark.tags.slice(0, 3).map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-block px-2 py-0.5 bg-white rounded border-2 border-black text-[8px] font-bold"
+                  >
+                    {tag}
+                  </span>
+                ))}
+                {bookmark.tags.length > 3 && (
+                  <span className="inline-block px-2 py-0.5 bg-white rounded border-2 border-black text-[8px] font-bold">
+                    +{bookmark.tags.length - 3}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
           {/* Icon tong sampah hanya muncul saat delete mode aktif */}
           {deleteMode && (
@@ -130,7 +151,7 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, viewMode = 'compact', delete
     <div className="relative">
       <div
         onClick={handleClick}
-        onContextMenu={handleLongPress}
+        onContextMenu={handleRightClick}
         className={`
           flex flex-col items-center cursor-pointer group
           transition-all active:scale-95
