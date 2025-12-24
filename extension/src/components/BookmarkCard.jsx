@@ -118,24 +118,6 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, onEdit, viewMode = 'compact'
             <p className="text-black text-[10px] font-semibold truncate opacity-60">
               {new URL(bookmark.url).hostname.replace('www.', '')}
             </p>
-            {/* Tags */}
-            {bookmark.tags && bookmark.tags.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1">
-                {bookmark.tags.slice(0, 3).map((tag, index) => (
-                  <span
-                    key={index}
-                    className="inline-block px-2 py-0.5 bg-white rounded border-2 border-black text-[8px] font-bold"
-                  >
-                    {tag}
-                  </span>
-                ))}
-                {bookmark.tags.length > 3 && (
-                  <span className="inline-block px-2 py-0.5 bg-white rounded border-2 border-black text-[8px] font-bold">
-                    +{bookmark.tags.length - 3}
-                  </span>
-                )}
-              </div>
-            )}
           </div>
           {/* Icon tong sampah hanya muncul saat delete mode aktif */}
           {deleteMode && (

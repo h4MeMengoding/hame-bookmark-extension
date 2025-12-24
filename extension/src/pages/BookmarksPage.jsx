@@ -90,18 +90,18 @@ const BookmarksPage = ({ onLogout }) => {
     setShowForm(true);
   };
 
-  const handleAddBookmark = async (title, url, categoryId, tags = []) => {
+  const handleAddBookmark = async (title, url, categoryId) => {
     try {
       const token = await getToken();
       
       // Jika sedang edit, update bookmark
       if (editingBookmark) {
-        const updatedBookmark = await put(`/api/bookmarks/${editingBookmark.id}`, { title, url, categoryId, tags }, token);
+        const updatedBookmark = await put(`/api/bookmarks/${editingBookmark.id}`, { title, url, categoryId }, token);
         setBookmarks(bookmarks.map(b => b.id === editingBookmark.id ? updatedBookmark.bookmark : b));
         setToast({ type: 'success', message: 'Bookmark updated successfully!' });
       } else {
         // Jika tidak, tambah bookmark baru
-        const newBookmark = await post('/api/bookmarks', { title, url, categoryId, tags }, token);
+        const newBookmark = await post('/api/bookmarks', { title, url, categoryId }, token);
         setBookmarks([newBookmark.bookmark, ...bookmarks]);
         setToast({ type: 'success', message: 'Bookmark added successfully!' });
       }
