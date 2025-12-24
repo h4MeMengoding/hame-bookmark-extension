@@ -1,7 +1,7 @@
 // Authentication service
 
 import { post } from './api';
-import { saveToken, removeToken, saveUserData } from './storage';
+import { saveToken, removeToken, saveUserData, removeUserData, getToken } from './storage';
 
 /**
  * Signup user baru
@@ -44,11 +44,13 @@ export const login = async (email, password) => {
 };
 
 /**
- * Logout user
+ * Logout user - hapus semua data authentication
  */
 export const logout = async () => {
   try {
+    // Hapus token dan user data dari storage
     await removeToken();
+    await removeUserData();
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -56,9 +58,30 @@ export const logout = async () => {
 };
 
 /**
- * Check apakah user sudah login
+ * Check apakah user sudah login dan return token jika ada
  */
 export const checkAuth = async () => {
-  const token = await chrome.storage.local.get('auth_token');
-  return !!token.auth_token;
+  const token = await getToken();
+  return {
+    isAuthenticated: !!token,
+    token: token
+  };
+};
+
+/**
+ * Validate token dengan backend
+ * Return true jika token valid, false jika invalid
+ */
+export const validateToken = async (token) => {
+  try {
+    // Test token dengan request ke backend
+    // Jika token invalid, akan throw error
+    const { get } = await import('./api');
+    await get('/api/bookmarks', token);
+    return true;
+  } catch (error) {
+    // Token invalid atau expired
+    console.error('Token validation failed:', error);
+    return false;
+  }
 };

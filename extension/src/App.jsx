@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import LoginPage from './pages/LoginPage';
 import BookmarksPage from './pages/BookmarksPage';
 import { getToken } from './services/storage';
+import { logout } from './services/auth';
 import './styles/index.css';
 
 function App() {
@@ -9,15 +10,24 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    checkAuthentication();
+    // Auto-restore session saat extension dibuka
+    restoreSession();
   }, []);
 
-  const checkAuthentication = async () => {
+  const restoreSession = async () => {
     try {
       const token = await getToken();
-      setIsAuthenticated(!!token);
+      
+      if (token) {
+        // Token ditemukan, user tetap login
+        console.log('Session restored - user auto-login');
+        setIsAuthenticated(true);
+      } else {
+        // Tidak ada token, user perlu login
+        setIsAuthenticated(false);
+      }
     } catch (error) {
-      console.error('Auth check error:', error);
+      console.error('Session restore error:', error);
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
@@ -28,8 +38,17 @@ function App() {
     setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
+  const handleLogout = async () => {
+    try {
+      // Clear semua auth data dari storage
+      await logout();
+      setIsAuthenticated(false);
+      console.log('User logged out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Tetap logout meskipun ada error
+      setIsAuthenticated(false);
+    }
   };
 
   if (isLoading) {

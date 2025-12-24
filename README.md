@@ -2,6 +2,29 @@
 
 Chrome Extension modern untuk mengelola bookmark dengan authentication dan sync multi-device menggunakan React, Supabase, dan Prisma.
 
+---
+
+## 📥 Quick Install (Untuk User)
+
+### Download & Install (MUDAH - 3 Langkah)
+1. **Download** dari [GitHub Releases](https://github.com/YOUR_USERNAME/bookmark-extension/releases) → Download file `.zip`
+2. **Extract** ZIP file ke folder
+3. **Install** di Chrome:
+   - Buka `chrome://extensions/`
+   - Enable "Developer mode" (toggle kanan atas)
+   - Click "Load unpacked" → Pilih folder hasil extract
+   - ✅ Done!
+
+### Build Sendiri (Untuk Developer)
+```bash
+git clone https://github.com/YOUR_USERNAME/bookmark-extension.git
+cd bookmark-extension/extension
+npm install && npm run build
+# Load unpacked dari folder dist/
+```
+
+---
+
 ## 📐 Arsitektur Aplikasi
 
 ```
@@ -96,7 +119,41 @@ bookmark-extension/
     └── package.json
 ```
 
-## 🚀 Setup & Installation
+## 🚀 Quick Start (User)
+
+**Untuk pengguna yang hanya ingin menggunakan extension:**
+
+### Cara Mudah (Rekomendasi)
+1. Download extension dari [GitHub Releases](https://github.com/YOUR_USERNAME/bookmark-extension/releases)
+2. Extract file `.zip` yang sudah di-download
+3. Buka Chrome → `chrome://extensions/`
+4. Enable **Developer mode** (toggle di kanan atas)
+5. Click **Load unpacked**
+6. Pilih folder yang sudah di-extract
+7. ✅ Extension siap digunakan!
+
+### Cara Manual (Build Sendiri)
+Jika ingin build sendiri dari source code:
+
+```bash
+# 1. Clone repository
+git clone https://github.com/YOUR_USERNAME/bookmark-extension.git
+cd bookmark-extension/extension
+
+# 2. Install dependencies & build
+npm install
+npm run build
+
+# 3. Load extension
+# Buka Chrome → chrome://extensions/
+# Load unpacked → pilih folder 'dist'
+```
+
+---
+
+## 🛠 Development Setup (Developer)
+
+**Untuk developer yang ingin contribute atau customize:**
 
 ### 1. Setup Backend
 
@@ -194,43 +251,36 @@ Authorization: Bearer <supabase_access_token>
 - ✅ Delete bookmark
 - ✅ Real-time sync dengan database
 
-## 🧪 Development
+## 📦 Build & Release
 
-### Extension Development
+### Untuk Development
 ```bash
 cd extension
 npm run dev    # Auto rebuild on changes
 ```
 
-### Backend Development
-```bash
-cd backend
-npm run dev    # Next.js dev server on port 3000
-```
-
-### Database Management
-```bash
-cd backend
-npx prisma studio    # Visual database editor
-npx prisma migrate dev    # Create new migration
-```
-
-## 📦 Production Build
-
-### Extension
+### Untuk Production
 ```bash
 cd extension
-npm run build
-# Hasil build di folder dist/
-# Zip folder dist/ untuk upload ke Chrome Web Store
+npm run build    # Build ke folder dist/
+npm run package  # Build + Create ZIP untuk distribusi
 ```
 
-### Backend
-```bash
-cd backend
-npm run build
-# Deploy ke Vercel/Railway/etc
-```
+**Package script** akan otomatis:
+- Install dependencies
+- Build extension
+- Copy manifest & icons
+- Create ZIP di `extension/releases/`
+
+### Release ke GitHub
+1. Update version di `extension/manifest.json`
+2. Run `npm run package`
+3. Create GitHub Release & upload ZIP
+4. Users download & install!
+
+**GitHub Actions** akan auto-build jika Anda create release tag.
+
+---
 
 ## 🌐 Environment Variables
 
@@ -242,9 +292,12 @@ SUPABASE_SERVICE_ROLE_KEY="eyJhbG..."
 NEXT_PUBLIC_API_URL="https://your-api.vercel.app"
 ```
 
-### Extension (vite.config.js)
-```javascript
-define: {
+### Extension (.env)
+```env
+VITE_API_URL=https://your-backend-api.vercel.app
+```
+
+---
   'process.env.VITE_API_URL': JSON.stringify('https://your-api.vercel.app')
 }
 ```
@@ -253,6 +306,12 @@ define: {
 
 MIT
 
-## 👨‍💻 Developer
+## 📚 Documentation
+
+- **[INSTALL.md](INSTALL.md)** - Panduan instalasi untuk user
+- **[SECURITY.md](SECURITY.md)** - Security best practices
+- **[PERSISTENT_AUTH.md](PERSISTENT_AUTH.md)** - Implementasi persistent authentication
+
+## �👨‍💻 Developer
 
 Built with ❤️ by Senior Fullstack Engineer

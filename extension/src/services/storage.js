@@ -71,6 +71,19 @@ export const getUserData = async () => {
 };
 
 /**
+ * Hapus user data dari storage
+ */
+export const removeUserData = async () => {
+  try {
+    await chrome.storage.local.remove(STORAGE_KEYS.USER_DATA);
+    return true;
+  } catch (error) {
+    console.error('Error removing user data:', error);
+    return false;
+  }
+};
+
+/**
  * Clear semua data
  */
 export const clearStorage = async () => {

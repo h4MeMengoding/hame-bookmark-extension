@@ -32,6 +32,17 @@ export const apiRequest = async (endpoint, options = {}) => {
     const data = await response.json();
 
     if (!response.ok) {
+      // Jika token invalid/expired (401), auto logout
+      if (response.status === 401) {
+        console.warn('Token invalid atau expired - user akan di-logout');
+        // Import logout function secara dinamis untuk menghindari circular dependency
+        const { logout } = await import('./auth');
+        await logout();
+        
+        // Reload extension untuk kembali ke login page
+        window.location.reload();
+      }
+      
       throw new Error(data.error || `HTTP error! status: ${response.status}`);
     }
 
