@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
 import { ExternalLink, Trash2, X } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog';
 
 const BookmarkCard = ({ bookmark, onOpen, onDelete, viewMode = 'compact', deleteMode = false }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDelete = async (e) => {
     e.stopPropagation();
+    setShowConfirm(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setShowConfirm(false);
     setIsDeleting(true);
     try {
       await onDelete(bookmark.id, true);
@@ -133,6 +140,19 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, viewMode = 'compact', delete
         >
           <X className="w-4 h-4 text-white" strokeWidth={3} />
         </button>
+      )}
+
+      {/* Confirm Delete Dialog */}
+      {showConfirm && (
+        <ConfirmDialog
+          title="Delete Bookmark"
+          message={`Are you sure you want to delete "${bookmark.title}"?`}
+          confirmText="Yes, Delete"
+          cancelText="Cancel"
+          type="danger"
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setShowConfirm(false)}
+        />
       )}
     </div>
   );

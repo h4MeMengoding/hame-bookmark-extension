@@ -9,6 +9,7 @@ import FilterChips from '../components/FilterChips';
 import CategoryForm from '../components/CategoryForm';
 import ErrorNotification from '../components/ErrorNotification';
 import ProfileMenu from '../components/ProfileMenu';
+import Toast from '../components/Toast';
 
 const BookmarksPage = ({ onLogout }) => {
   const [bookmarks, setBookmarks] = useState([]);
@@ -24,6 +25,7 @@ const BookmarksPage = ({ onLogout }) => {
   const [viewMode, setViewMode] = useState('compact'); // 'compact' or 'detail'
   const [deleteMode, setDeleteMode] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     fetchBookmarks();
@@ -77,6 +79,7 @@ const BookmarksPage = ({ onLogout }) => {
       setBookmarks([newBookmark.bookmark, ...bookmarks]);
       setShowForm(false);
       setError('');
+      setToast({ type: 'success', message: 'Bookmark added successfully!' });
     } catch (err) {
       const errorMsg = err.message === 'Failed to fetch'
         ? 'Cannot add bookmark. Backend server is down.'
@@ -103,17 +106,12 @@ const BookmarksPage = ({ onLogout }) => {
   };
 
   const handleDeleteBookmark = async (id, skipConfirm = false) => {
-    if (!skipConfirm && !deleteMode) {
-      if (!window.confirm('Are you sure you want to delete this bookmark?')) {
-        return;
-      }
-    }
-    
     try {
       const token = await getToken();
       await del(`/api/bookmarks/${id}`, token);
       setBookmarks(bookmarks.filter((b) => b.id !== id));
       setError('');
+      setToast({ type: 'success', message: 'Bookmark deleted successfully!' });
     } catch (err) {
       const errorMsg = err.message === 'Failed to fetch'
         ? 'Cannot delete bookmark. Backend server is down.'
@@ -130,7 +128,8 @@ const BookmarksPage = ({ onLogout }) => {
 
   const handleLogout = async () => {
     await clearStorage();
-    onLogout();
+    setToast({ type: 'success', message: 'Logged out successfully!' });
+    setTimeout(() => onLogout(), 1000);
   };
 
   // Auto categorize bookmark berdasarkan domain
@@ -315,6 +314,15 @@ const BookmarksPage = ({ onLogout }) => {
           {bookmarks.length} saved
         </p>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

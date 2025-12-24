@@ -1,11 +1,49 @@
 import React, { useState } from 'react';
-import { Save, X, Link as LinkIcon, FileText, Tag } from 'lucide-react';
+import { Save, X, Link as LinkIcon, FileText, Tag, Sparkles } from 'lucide-react';
 
 const BookmarkForm = ({ onSubmit, onCancel, categories = [] }) => {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // Auto-generate title from URL
+  const handleGenerateTitle = async () => {
+    if (!url.trim()) {
+      alert('Please enter a URL first');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch(url);
+      const html = await response.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const pageTitle = doc.querySelector('title')?.textContent || '';
+      
+      if (pageTitle) {
+        setTitle(pageTitle.trim());
+      } else {
+        // Fallback: generate from hostname
+        const urlObj = new URL(url);
+        const hostname = urlObj.hostname.replace('www.', '');
+        setTitle(hostname.charAt(0).toUpperCase() + hostname.slice(1));
+      }
+    } catch (error) {
+      // Fallback: generate from hostname
+      try {
+        const urlObj = new URL(url);
+        const hostname = urlObj.hostname.replace('www.', '');
+        setTitle(hostname.charAt(0).toUpperCase() + hostname.slice(1));
+      } catch {
+        alert('Please enter a valid URL');
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -51,27 +89,7 @@ const BookmarkForm = ({ onSubmit, onCancel, categories = [] }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Title Input */}
-        <div>
-          <label className="block text-sm font-bold text-black mb-2">
-            Title
-          </label>
-          <div className="relative">
-            <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black" strokeWidth={2.5} />
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-neo-green text-black font-semibold pl-12 pr-4 py-3 rounded-lg border-3 border-black focus:border-black transition-all"
-              placeholder="My Awesome Website"
-              required
-              disabled={isSubmitting}
-              maxLength={100}
-            />
-          </div>
-        </div>
-
-        {/* URL Input */}
+        {/* URL Input - SEKARANG DI ATAS */}
         <div>
           <label className="block text-sm font-bold text-black mb-2">
             URL
@@ -90,30 +108,66 @@ const BookmarkForm = ({ onSubmit, onCancel, categories = [] }) => {
           </div>
         </div>
 
-        {/* Category Selector */}
-        {categories.length > 0 && (
-          <div>
-            <label className="block text-sm font-bold text-black mb-2">
-              Category (Optional)
-            </label>
-            <div className="relative">
-              <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black" strokeWidth={2.5} />
-              <select
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full bg-neo-yellow text-black font-semibold pl-12 pr-4 py-3 rounded-lg border-3 border-black focus:border-black transition-all appearance-none cursor-pointer"
+        {/* Title Input - SEKARANG DI BAWAH */}
+        <div>
+          <label className="block text-sm font-bold text-black mb-2">
+            Title
+          </label>
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black" strokeWidth={2.5} />
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full bg-neo-green text-black font-semibold pl-12 pr-4 py-3 rounded-lg border-3 border-black focus:border-black transition-all"
+                placeholder="My Awesome Website"
+                required
                 disabled={isSubmitting}
-              >
-                <option value="">No Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+                maxLength={100}
+              />
             </div>
+            <button
+              type="button"
+              onClick={handleGenerateTitle}
+              disabled={isGenerating || isSubmitting || !url.trim()}
+              className="bg-neo-yellow text-black font-black px-4 py-3 rounded-lg border-3 border-black shadow-brutal hover:shadow-brutal-sm active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              title="Auto-generate title from URL"
+            >
+              <Sparkles className="w-5 h-5" strokeWidth={3} />
+              {isGenerating ? '...' : 'Auto'}
+            </button>
           </div>
-        )}
+        </div>
+
+        {/* Category Selector */}
+        <div>
+          <label className="block text-sm font-bold text-black mb-2">
+            Category {categories.length === 0 && <span className="text-red-500">*</span>}
+          </label>
+          <div className="relative">
+            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black" strokeWidth={2.5} />
+            <select
+              value={categoryId}
+              onChange={(e) => setCategoryId(e.target.value)}
+              className="w-full bg-neo-yellow text-black font-semibold pl-12 pr-4 py-3 rounded-lg border-3 border-black focus:border-black transition-all appearance-none cursor-pointer"
+              disabled={isSubmitting}
+              required={categories.length === 0}
+            >
+              <option value="">Select a category</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {categories.length === 0 && (
+            <p className="text-xs text-red-600 font-semibold mt-1">
+              Please select a category for your first bookmark
+            </p>
+          )}
+        </div>
 
         {/* Actions */}
         <div className="flex gap-3 pt-2">

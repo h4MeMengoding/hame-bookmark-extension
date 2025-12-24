@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LogIn, Mail, Lock, Loader2, UserPlus } from 'lucide-react';
 import { login, signup } from '../services/auth';
+import Toast from '../components/Toast';
 
 const LoginPage = ({ onLoginSuccess }) => {
   const [isSignup, setIsSignup] = useState(false);
@@ -8,6 +9,7 @@ const LoginPage = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,7 +22,11 @@ const LoginPage = ({ onLoginSuccess }) => {
         : await login(email, password);
       
       if (result.success) {
-        onLoginSuccess();
+        setToast({ 
+          type: 'success', 
+          message: isSignup ? 'Account created successfully!' : 'Login successful!' 
+        });
+        setTimeout(() => onLoginSuccess(), 1000);
       } else {
         setError(result.error);
       }
@@ -131,12 +137,20 @@ const LoginPage = ({ onLoginSuccess }) => {
             </button>
           </div>
         </div>
-
         {/* Footer */}
         <p className="text-center text-black text-xs font-semibold mt-6">
           Hame Bookmark - Save and organize your favorite links
         </p>
       </div>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

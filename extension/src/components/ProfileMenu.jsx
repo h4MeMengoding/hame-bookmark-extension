@@ -1,7 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User, LogOut } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog';
 
 const ProfileMenu = ({ user, onLogout, onClose }) => {
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const handleLogoutClick = () => {
+    setShowConfirm(true);
+  };
+
+  const handleConfirmLogout = () => {
+    setShowConfirm(false);
+    onLogout();
+  };
+
   return (
     <>
       {/* Backdrop */}
@@ -30,7 +42,7 @@ const ProfileMenu = ({ user, onLogout, onClose }) => {
 
           {/* Logout Button */}
           <button
-            onClick={onLogout}
+            onClick={handleLogoutClick}
             className="w-full mt-4 flex items-center gap-2 bg-red-500 text-white font-black px-4 py-3 rounded-lg border-3 border-black shadow-brutal-sm hover:shadow-none active:shadow-none transition-all"
           >
             <LogOut className="w-5 h-5" strokeWidth={3} />
@@ -38,6 +50,19 @@ const ProfileMenu = ({ user, onLogout, onClose }) => {
           </button>
         </div>
       </div>
+
+      {/* Confirm Logout Dialog */}
+      {showConfirm && (
+        <ConfirmDialog
+          title="Logout Confirmation"
+          message="Are you sure you want to logout?"
+          confirmText="Yes, Logout"
+          cancelText="Cancel"
+          type="danger"
+          onConfirm={handleConfirmLogout}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
     </>
   );
 };
