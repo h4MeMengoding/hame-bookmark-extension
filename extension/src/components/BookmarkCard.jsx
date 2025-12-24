@@ -36,13 +36,47 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, viewMode = 'compact', delete
     setShowMenu(!showMenu);
   };
 
-  // Get favicon dari Google's favicon service
+  // Get favicon dengan service yang lebih akurat - try direct favicon first
   const getFavicon = (url) => {
     try {
-      const domain = new URL(url).hostname;
-      return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname;
+      const baseUrl = `${urlObj.protocol}//${domain}`;
+      
+      // Try to get the actual favicon from the site first
+      return `${baseUrl}/favicon.ico`;
     } catch {
       return null;
+    }
+  };
+
+  // Multiple fallback strategy untuk icon
+  const handleFaviconError = (e, url) => {
+    const img = e.target;
+    const currentSrc = img.src;
+    
+    try {
+      const urlObj = new URL(url);
+      const domain = urlObj.hostname;
+      
+      // Fallback chain:
+      // 1. Direct favicon.ico (already tried)
+      // 2. DuckDuckGo
+      // 3. Google
+      // 4. Hide
+      
+      if (currentSrc.includes('favicon.ico')) {
+        // Try DuckDuckGo
+        img.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+      } else if (currentSrc.includes('duckduckgo')) {
+        // Try Google with larger size
+        img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+      } else {
+        // All failed, hide
+        img.style.display = 'none';
+      }
+    } catch {
+      img.style.display = 'none';
     }
   };
 
@@ -68,20 +102,21 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, viewMode = 'compact', delete
                 src={getFavicon(bookmark.url)} 
                 alt="" 
                 className="w-8 h-8"
-                onError={(e) => e.target.style.display = 'none'}
+                onError={(e) => handleFaviconError(e, bookmark.url)}
               />
             ) : (
               <ExternalLink className="w-6 h-6 text-black" strokeWidth={2.5} />
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-black font-black text-sm truncate">
+            <h3 className="text-black font-bold text-xs leading-tight line-clamp-2 mb-0.5">
               {bookmark.title}
             </h3>
-            <p className="text-black text-xs font-semibold truncate opacity-70">
+            <p className="text-black text-[10px] font-semibold truncate opacity-60">
               {new URL(bookmark.url).hostname.replace('www.', '')}
             </p>
           </div>
+          {/* Icon tong sampah hanya muncul saat delete mode aktif */}
           {deleteMode && (
             <Trash2 className="w-5 h-5 text-red-600" strokeWidth={3} />
           )}
@@ -115,17 +150,15 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, viewMode = 'compact', delete
               src={getFavicon(bookmark.url)} 
               alt="" 
               className="w-8 h-8"
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
+              onError={(e) => handleFaviconError(e, bookmark.url)}
             />
           ) : (
             <ExternalLink className="w-6 h-6 text-black" strokeWidth={2.5} />
           )}
         </div>
 
-        {/* Title */}
-        <p className="text-black font-bold text-xs text-center leading-tight line-clamp-2 px-1 max-w-full break-words">
+        {/* Title - ukuran lebih kecil, lebih banyak text sebelum ... */}
+        <p className="text-black font-semibold text-[10px] text-center leading-tight line-clamp-2 px-0.5 max-w-full break-words">
           {bookmark.title}
         </p>
       </div>

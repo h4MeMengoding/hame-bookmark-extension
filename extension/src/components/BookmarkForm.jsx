@@ -1,12 +1,70 @@
-import React, { useState } from 'react';
-import { Save, X, Link as LinkIcon, FileText, Tag, Sparkles } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Save, X, Link as LinkIcon, FileText, Tag, Sparkles, Plus, ChevronDown } from 'lucide-react';
 
-const BookmarkForm = ({ onSubmit, onCancel, categories = [] }) => {
+const BookmarkForm = ({ onSubmit, onCancel, categories = [], onCreateCategory }) => {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [categorySearch, setCategorySearch] = useState('');
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowCategoryDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Filter categories based on search
+  const filteredCategories = categories.filter(cat =>
+    cat.name.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
+  // Get selected category name
+  const selectedCategory = categories.find(cat => cat.id === categoryId);
+
+  // Handle category selection
+  const handleSelectCategory = (cat) => {
+    setCategoryId(cat.id);
+    setCategorySearch(cat.name);
+    setShowCategoryDropdown(false);
+  };
+
+  // Handle create new category
+  const handleCreateCategory = async () => {
+    if (!categorySearch.trim()) return;
+    
+    const colors = ['neo-yellow', 'neo-pink', 'neo-blue', 'neo-green', 'neo-purple', 'neo-orange'];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    if (onCreateCategory) {
+      const newCategory = await onCreateCategory(categorySearch.trim(), randomColor);
+      if (newCategory) {
+        setCategoryId(newCategory.id);
+        setCategorySearch(newCategory.name);
+        setShowCategoryDropdown(false);
+      }
+    }
+  };
+
+  // Handle Enter key in category search
+  const handleCategoryKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filteredCategories.length === 0 && categorySearch.trim()) {
+        handleCreateCategory();
+      } else if (filteredCategories.length === 1) {
+        handleSelectCategory(filteredCategories[0]);
+      }
+    }
+  };
 
   // Auto-generate title from URL
   const handleGenerateTitle = async () => {
@@ -100,7 +158,7 @@ const BookmarkForm = ({ onSubmit, onCancel, categories = [] }) => {
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="w-full bg-neo-purple text-black font-semibold pl-12 pr-4 py-3 rounded-lg border-3 border-black focus:border-black transition-all"
+              className="w-full bg-neo-purple text-black font-semibold pl-12 pr-4 py-3 rounded-lg border-3 border-black focus:border-black transition-all placeholder-gray-500"
               placeholder="https://example.com"
               required
               disabled={isSubmitting}
@@ -120,8 +178,8 @@ const BookmarkForm = ({ onSubmit, onCancel, categories = [] }) => {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full bg-neo-green text-black font-semibold pl-12 pr-4 py-3 rounded-lg border-3 border-black focus:border-black transition-all"
-                placeholder="My Awesome Website"
+                className="w-full bg-neo-green text-black font-semibold pl-12 pr-4 py-3 rounded-lg border-3 border-black focus:border-black transition-all placeholder-gray-500"
+                placeholder="Ma Awesome Website"
                 required
                 disabled={isSubmitting}
                 maxLength={100}
@@ -140,31 +198,83 @@ const BookmarkForm = ({ onSubmit, onCancel, categories = [] }) => {
           </div>
         </div>
 
-        {/* Category Selector */}
-        <div>
+        {/* Category Selector - Searchable */}
+        <div ref={dropdownRef}>
           <label className="block text-sm font-bold text-black mb-2">
-            Category {categories.length === 0 && <span className="text-red-500">*</span>}
+            Category {!categoryId && <span className="text-red-500">*</span>}
           </label>
           <div className="relative">
-            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black" strokeWidth={2.5} />
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full bg-neo-yellow text-black font-semibold pl-12 pr-4 py-3 rounded-lg border-3 border-black focus:border-black transition-all appearance-none cursor-pointer"
+            <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black z-10" strokeWidth={2.5} />
+            <input
+              type="text"
+              value={categorySearch}
+              onChange={(e) => {
+                setCategorySearch(e.target.value);
+                setShowCategoryDropdown(true);
+              }}
+              onFocus={() => setShowCategoryDropdown(true)}
+              onKeyDown={handleCategoryKeyDown}
+              className="w-full bg-neo-yellow text-black font-semibold pl-12 pr-10 py-3 rounded-lg border-3 border-black focus:border-black transition-all placeholder-gray-500"
+              placeholder={selectedCategory ? selectedCategory.name : "Search or create category..."}
               disabled={isSubmitting}
-              required={categories.length === 0}
-            >
-              <option value="">Select a category</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
+            />
+            <ChevronDown 
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black cursor-pointer"
+              strokeWidth={2.5}
+              onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+            />
+
+            {/* Dropdown */}
+            {showCategoryDropdown && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white border-3 border-black rounded-lg shadow-brutal max-h-48 overflow-y-auto z-20">
+                {/* Filtered Categories */}
+                {filteredCategories.length > 0 ? (
+                  filteredCategories.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => handleSelectCategory(cat)}
+                      className="w-full text-left px-4 py-3 hover:bg-neo-cream transition-colors border-b-2 border-black last:border-b-0 font-semibold text-black flex items-center gap-2"
+                    >
+                      <div className={`w-4 h-4 rounded border-2 border-black bg-${cat.color || 'neo-yellow'}`}></div>
+                      {cat.name}
+                    </button>
+                  ))
+                ) : (
+                  <div className="px-4 py-3 text-black font-semibold">
+                    {categorySearch.trim() ? (
+                      <button
+                        type="button"
+                        onClick={handleCreateCategory}
+                        className="w-full flex items-center gap-2 bg-neo-green px-3 py-2 rounded-lg border-2 border-black hover:shadow-brutal-sm transition-all"
+                      >
+                        <Plus className="w-4 h-4" strokeWidth={3} />
+                        Create "{categorySearch}"
+                      </button>
+                    ) : (
+                      <span className="text-sm opacity-70">Type to search or create...</span>
+                    )}
+                  </div>
+                )}
+
+                {/* Create New Button (if search has results) */}
+                {filteredCategories.length > 0 && categorySearch.trim() && 
+                 !categories.find(cat => cat.name.toLowerCase() === categorySearch.toLowerCase()) && (
+                  <button
+                    type="button"
+                    onClick={handleCreateCategory}
+                    className="w-full flex items-center gap-2 bg-neo-green text-black font-black px-4 py-3 border-t-3 border-black hover:bg-opacity-80 transition-all"
+                  >
+                    <Plus className="w-4 h-4" strokeWidth={3} />
+                    Create "{categorySearch}"
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-          {categories.length === 0 && (
-            <p className="text-xs text-red-600 font-semibold mt-1">
-              Please select a category for your first bookmark
+          {!categoryId && (
+            <p className="text-xs text-black font-semibold mt-1 opacity-70">
+              💡 Type to search, or press Enter to create new
             </p>
           )}
         </div>

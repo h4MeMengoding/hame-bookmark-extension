@@ -96,12 +96,15 @@ const BookmarksPage = ({ onLogout }) => {
       setCategories([...categories, newCategory.category]);
       setShowCategoryForm(false);
       setError('');
+      setToast({ type: 'success', message: `Category "${name}" created!` });
+      return newCategory.category; // Return the created category
     } catch (err) {
       const errorMsg = err.message === 'Failed to fetch'
         ? 'Cannot add category. Backend server is down.'
         : 'Failed to add category';
       setErrorNotification(errorMsg);
       console.error('Add category error:', err);
+      return null;
     }
   };
 
@@ -224,6 +227,7 @@ const BookmarksPage = ({ onLogout }) => {
               onSubmit={handleAddBookmark}
               onCancel={() => setShowForm(false)}
               categories={categories}
+              onCreateCategory={handleAddCategory}
             />
           </div>
         )}

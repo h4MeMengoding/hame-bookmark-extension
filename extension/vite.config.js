@@ -39,7 +39,7 @@ export default defineConfig({
   },
   define: {
     'process.env.VITE_API_URL': JSON.stringify(
-      process.env.VITE_API_URL || 'https://api-extension.ilhame.id'
+      process.env.VITE_API_URL || 'http://188.166.248.22:3001'
     ),
   },
 });
