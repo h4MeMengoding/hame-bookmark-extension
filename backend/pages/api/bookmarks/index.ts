@@ -28,6 +28,10 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<BookmarksResponse>
 ) {
+  // Handle OPTIONS request for CORS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
   // Authenticate user
   const auth = await authenticate(req, res);
   if (!auth) return;

@@ -3,6 +3,11 @@ import { prisma } from '../../../lib/prisma';
 import { authenticate } from '../../../middleware/auth';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Handle OPTIONS request for CORS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   const auth = await authenticate(req, res);
   if (!auth) return;
 

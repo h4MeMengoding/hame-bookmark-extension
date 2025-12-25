@@ -16,6 +16,11 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse<ApiResponse>
 ) {
+  // Handle OPTIONS request for CORS preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Authenticate user
   const auth = await authenticate(req, res);
   if (!auth) return;
@@ -32,6 +37,8 @@ export default async function handler(
     if (req.method === 'PUT') {
       const { title, url, categoryId, tags } = req.body;
 
+      console.log('UPDATE bookmark request:', { id, title, url, categoryId, tags, userId: user.id });
+
       // Validasi input
       if (!title || !url) {
         return res.status(400).json({ error: 'Title and URL are required' });
@@ -46,8 +53,11 @@ export default async function handler(
       });
 
       if (!existingBookmark) {
+        console.log('Bookmark not found:', { id, userId: user.id });
         return res.status(404).json({ error: 'Bookmark not found' });
       }
+
+      console.log('Existing bookmark:', existingBookmark);
 
       // Update bookmark
       const updatedBookmark = await prisma.bookmark.update({
@@ -59,6 +69,8 @@ export default async function handler(
           tags: tags !== undefined ? tags : existingBookmark.tags,
         },
       });
+
+      console.log('Updated bookmark:', updatedBookmark);
 
       return res.status(200).json({ 
         message: 'Bookmark updated successfully',

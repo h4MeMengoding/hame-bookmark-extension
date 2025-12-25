@@ -417,7 +417,7 @@ const BookmarksPage = ({ onLogout }) => {
       {/* Footer */}
       <div className="fixed bottom-0 left-0 right-0 bg-neo-cream border-t-3 border-black py-2">
         <p className="text-center text-black font-bold text-sm">
-          {bookmarks.length} saved
+          {bookmarks.length} saved | {import.meta.env.VITE_API_URL?.includes('localhost') ? 'localhost' : 'Production'}
         </p>
       </div>
 
