@@ -30,6 +30,7 @@ model Bookmark {
   id         String   @id @default(uuid())
   title      String
   url        String
+  iconUrl    String?  // Optional custom icon URL
   userId     String
   categoryId String?
   tags       String[] @default([])  // Array of tags

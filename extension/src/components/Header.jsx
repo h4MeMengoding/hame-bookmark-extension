@@ -34,7 +34,7 @@ const Header = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Search bookmarks..."
+                placeholder="..."
                 className="w-full pl-10 pr-4 py-2 rounded-lg border-3 border-black font-bold text-sm focus:outline-none focus:ring-2 focus:ring-black"
               />
             </div>

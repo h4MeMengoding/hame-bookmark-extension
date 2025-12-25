@@ -35,9 +35,9 @@ export default async function handler(
   try {
     // PUT - Update bookmark
     if (req.method === 'PUT') {
-      const { title, url, categoryId, tags } = req.body;
+      const { title, url, categoryId, tags, iconUrl } = req.body;
 
-      console.log('UPDATE bookmark request:', { id, title, url, categoryId, tags, userId: user.id });
+      console.log('UPDATE bookmark request:', { id, title, url, categoryId, tags, iconUrl, userId: user.id });
 
       // Validasi input
       if (!title || !url) {
@@ -65,6 +65,7 @@ export default async function handler(
         data: {
           title,
           url,
+          iconUrl: iconUrl?.trim() || null,
           categoryId: categoryId || null,
           tags: tags !== undefined ? tags : existingBookmark.tags,
         },

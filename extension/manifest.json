@@ -29,8 +29,8 @@
     "https://*/*",
     "http://*/*"
   ],
-  
+
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' data: https: http:"
   }
 }

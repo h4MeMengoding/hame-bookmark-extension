@@ -1,11 +1,53 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ExternalLink, Trash2, X } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog';
+import { getFavicon, DEFAULT_FAVICON } from '../services/favicon';
+import { ImageLoading } from './LoadingAnimation';
 
-const BookmarkCard = ({ bookmark, onOpen, onDelete, onEdit, viewMode = 'compact', deleteMode = false }) => {
+const BookmarkCard = ({ bookmark, onOpen, onDelete, onEdit, viewMode = 'compact', deleteMode = false, category = null }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [faviconUrl, setFaviconUrl] = useState(DEFAULT_FAVICON);
+  const [faviconLoading, setFaviconLoading] = useState(true);
+
+  // Load favicon secara otomatis dari backend
+  useEffect(() => {
+    let mounted = true;
+
+    const loadFavicon = async () => {
+      // If custom iconUrl is provided, use it directly
+      if (bookmark.iconUrl) {
+        console.log('[BookmarkCard] Using custom iconUrl:', bookmark.iconUrl);
+        setFaviconUrl(bookmark.iconUrl);
+        setFaviconLoading(false);
+        return;
+      }
+
+      setFaviconLoading(true);
+      try {
+        console.log('[BookmarkCard] Loading favicon for:', bookmark.url);
+        const url = await getFavicon(bookmark.url);
+        console.log('[BookmarkCard] Favicon result:', url);
+        if (mounted) {
+          setFaviconUrl(url);
+          setFaviconLoading(false);
+        }
+      } catch (error) {
+        console.error('[BookmarkCard] Error loading favicon:', error);
+        if (mounted) {
+          setFaviconUrl(DEFAULT_FAVICON);
+          setFaviconLoading(false);
+        }
+      }
+    };
+
+    loadFavicon();
+
+    return () => {
+      mounted = false;
+    };
+  }, [bookmark.url, bookmark.iconUrl]);
 
   const handleDelete = async (e) => {
     e.stopPropagation();
@@ -38,52 +80,9 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, onEdit, viewMode = 'compact'
     }
   };
 
-  // Get favicon dengan service yang lebih akurat - try direct favicon first
-  const getFavicon = (url) => {
-    try {
-      const urlObj = new URL(url);
-      const domain = urlObj.hostname;
-      const baseUrl = `${urlObj.protocol}//${domain}`;
-      
-      // Try to get the actual favicon from the site first
-      return `${baseUrl}/favicon.ico`;
-    } catch {
-      return null;
-    }
-  };
-
-  // Multiple fallback strategy untuk icon
-  const handleFaviconError = (e, url) => {
-    const img = e.target;
-    const currentSrc = img.src;
-    
-    try {
-      const urlObj = new URL(url);
-      const domain = urlObj.hostname;
-      
-      // Fallback chain:
-      // 1. Direct favicon.ico (already tried)
-      // 2. DuckDuckGo
-      // 3. Google
-      // 4. Hide
-      
-      if (currentSrc.includes('favicon.ico')) {
-        // Try DuckDuckGo
-        img.src = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-      } else if (currentSrc.includes('duckduckgo')) {
-        // Try Google with larger size
-        img.src = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-      } else {
-        // All failed, hide
-        img.style.display = 'none';
-      }
-    } catch {
-      img.style.display = 'none';
-    }
-  };
-
   const colors = ['neo-yellow', 'neo-pink', 'neo-blue', 'neo-green', 'neo-purple', 'neo-orange'];
-  const randomColor = colors[bookmark.id.charCodeAt(0) % colors.length];
+  // Use category color if available, otherwise use random color based on bookmark id
+  const cardColor = category?.color || colors[bookmark.id.charCodeAt(0) % colors.length];
 
   // Detail View
   if (viewMode === 'detail') {
@@ -92,7 +91,7 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, onEdit, viewMode = 'compact'
         onClick={handleClick}
         onContextMenu={handleRightClick}
         className={`
-          bg-${randomColor} rounded-xl p-3 border-3 border-black 
+          bg-${cardColor} rounded-xl p-3 border-3 border-black 
           shadow-brutal hover:shadow-brutal-sm cursor-pointer 
           transition-all active:shadow-none
           ${deleteMode ? 'hover:bg-red-100' : ''}
@@ -100,12 +99,16 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, onEdit, viewMode = 'compact'
       >
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-lg bg-white border-3 border-black flex items-center justify-center flex-shrink-0 overflow-hidden">
-            {getFavicon(bookmark.url) ? (
+            {faviconLoading ? (
+              <ImageLoading />
+            ) : faviconUrl && faviconUrl !== DEFAULT_FAVICON ? (
               <img 
-                src={getFavicon(bookmark.url)} 
+                src={faviconUrl} 
                 alt="" 
-                className="w-8 h-8"
-                onError={(e) => handleFaviconError(e, bookmark.url)}
+                className="w-8 h-8 object-contain"
+                onError={(e) => {
+                  e.target.src = DEFAULT_FAVICON;
+                }}
               />
             ) : (
               <ExternalLink className="w-6 h-6 text-black" strokeWidth={2.5} />
@@ -142,18 +145,22 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, onEdit, viewMode = 'compact'
       >
         {/* Icon Container */}
         <div className={`
-          w-14 h-14 rounded-xl bg-${randomColor} border-3 border-black 
+          w-14 h-14 rounded-xl bg-${cardColor} border-3 border-black 
           shadow-brutal-sm hover:shadow-brutal 
           flex items-center justify-center 
           overflow-hidden mb-1.5
           transition-all
         `}>
-          {getFavicon(bookmark.url) ? (
+          {faviconLoading ? (
+            <ImageLoading />
+          ) : faviconUrl && faviconUrl !== DEFAULT_FAVICON ? (
             <img 
-              src={getFavicon(bookmark.url)} 
+              src={faviconUrl} 
               alt="" 
-              className="w-8 h-8"
-              onError={(e) => handleFaviconError(e, bookmark.url)}
+              className="w-8 h-8 object-contain"
+              onError={(e) => {
+                e.target.src = DEFAULT_FAVICON;
+              }}
             />
           ) : (
             <ExternalLink className="w-6 h-6 text-black" strokeWidth={2.5} />

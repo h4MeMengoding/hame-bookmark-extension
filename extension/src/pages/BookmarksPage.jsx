@@ -10,6 +10,7 @@ import CategoryForm from '../components/CategoryForm';
 import ErrorNotification from '../components/ErrorNotification';
 import ProfileMenu from '../components/ProfileMenu';
 import Toast from '../components/Toast';
+import LoadingAnimation from '../components/LoadingAnimation';
 
 const BookmarksPage = ({ onLogout }) => {
   const [bookmarks, setBookmarks] = useState([]);
@@ -90,18 +91,18 @@ const BookmarksPage = ({ onLogout }) => {
     setShowForm(true);
   };
 
-  const handleAddBookmark = async (title, url, categoryId) => {
+  const handleAddBookmark = async (title, url, categoryId, iconUrl = null) => {
     try {
       const token = await getToken();
       
       // Jika sedang edit, update bookmark
       if (editingBookmark) {
-        const updatedBookmark = await put(`/api/bookmarks/${editingBookmark.id}`, { title, url, categoryId }, token);
+        const updatedBookmark = await put(`/api/bookmarks/${editingBookmark.id}`, { title, url, categoryId, iconUrl }, token);
         setBookmarks(bookmarks.map(b => b.id === editingBookmark.id ? updatedBookmark.bookmark : b));
         setToast({ type: 'success', message: 'Bookmark updated successfully!' });
       } else {
         // Jika tidak, tambah bookmark baru
-        const newBookmark = await post('/api/bookmarks', { title, url, categoryId }, token);
+        const newBookmark = await post('/api/bookmarks', { title, url, categoryId, iconUrl }, token);
         setBookmarks([newBookmark.bookmark, ...bookmarks]);
         setToast({ type: 'success', message: 'Bookmark added successfully!' });
       }
@@ -317,9 +318,7 @@ const BookmarksPage = ({ onLogout }) => {
 
         {/* Loading State */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-black animate-spin" strokeWidth={3} />
-          </div>
+          <LoadingAnimation message="Loading bookmarks..." />
         ) : bookmarks.length === 0 ? (
           /* Empty State */
           <div className="text-center py-20">
@@ -397,17 +396,23 @@ const BookmarksPage = ({ onLogout }) => {
                   )
                 )}
                 
-                {filteredBookmarks.map((bookmark) => (
-                  <BookmarkCard
-                    key={bookmark.id}
-                    bookmark={bookmark}
-                    onOpen={handleOpenBookmark}
-                    onDelete={handleDeleteBookmark}
-                    onEdit={handleEditBookmark}
-                    viewMode={viewMode}
-                    deleteMode={deleteMode}
-                  />
-                ))}
+                {filteredBookmarks.map((bookmark) => {
+                  // Find the category for this bookmark
+                  const bookmarkCategory = categories.find(cat => cat.id === bookmark.categoryId);
+                  
+                  return (
+                    <BookmarkCard
+                      key={bookmark.id}
+                      bookmark={bookmark}
+                      category={bookmarkCategory}
+                      onOpen={handleOpenBookmark}
+                      onDelete={handleDeleteBookmark}
+                      onEdit={handleEditBookmark}
+                      viewMode={viewMode}
+                      deleteMode={deleteMode}
+                    />
+                  );
+                })}
               </>
             )}
           </div>

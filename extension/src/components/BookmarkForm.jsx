@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Save, X, Link as LinkIcon, FileText, Tag, Sparkles, Plus, ChevronDown } from 'lucide-react';
+import { Save, X, Link as LinkIcon, FileText, Tag, Sparkles, Plus, ChevronDown, Image } from 'lucide-react';
 
 const BookmarkForm = ({ onSubmit, onCancel, categories = [], onCreateCategory, defaultCategory = null, editingBookmark = null }) => {
   const [title, setTitle] = useState(editingBookmark?.title || '');
   const [url, setUrl] = useState(editingBookmark?.url || '');
+  const [iconUrl, setIconUrl] = useState(editingBookmark?.iconUrl || '');
   const [categoryId, setCategoryId] = useState(editingBookmark?.categoryId || defaultCategory || '');
   const [categorySearch, setCategorySearch] = useState('');
   const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
@@ -131,9 +132,10 @@ const BookmarkForm = ({ onSubmit, onCancel, categories = [], onCreateCategory, d
 
     setIsSubmitting(true);
     try {
-      await onSubmit(title.trim(), url.trim(), categoryId || null);
+      await onSubmit(title.trim(), url.trim(), categoryId || null, iconUrl.trim() || null);
       setTitle('');
       setUrl('');
+      setIconUrl('');
       setCategoryId('');
     } catch (error) {
       console.error('Submit error:', error);
@@ -175,6 +177,27 @@ const BookmarkForm = ({ onSubmit, onCancel, categories = [], onCreateCategory, d
               disabled={isSubmitting}
             />
           </div>
+        </div>
+
+        {/* Icon URL Input (Optional) */}
+        <div>
+          <label className="block text-sm font-bold text-black mb-2">
+            Icon URL <span className="text-xs font-normal opacity-70">(Optional)</span>
+          </label>
+          <div className="relative">
+            <Image className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black" strokeWidth={2.5} />
+            <input
+              type="url"
+              value={iconUrl}
+              onChange={(e) => setIconUrl(e.target.value)}
+              className="w-full bg-neo-pink text-black font-semibold pl-12 pr-4 py-3 rounded-lg border-3 border-black focus:border-black transition-all placeholder-gray-500"
+              placeholder="https://example.com/icon.png (leave empty for auto-fetch)"
+              disabled={isSubmitting}
+            />
+          </div>
+          <p className="text-xs text-black font-semibold mt-1 opacity-70">
+            💡 Leave empty to auto-fetch favicon from website
+          </p>
         </div>
 
         {/* Title Input - SEKARANG DI BAWAH */}

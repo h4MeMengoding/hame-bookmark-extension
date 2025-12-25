@@ -48,6 +48,7 @@ export default async function handler(
           id: true,
           title: true,
           url: true,
+          iconUrl: true,
           categoryId: true,
           tags: true,
           clickCount: true,
@@ -72,7 +73,7 @@ export default async function handler(
 
     // POST - Create new bookmark
     if (req.method === 'POST') {
-      const { title, url, categoryId, tags } = req.body;
+      const { title, url, categoryId, tags, iconUrl } = req.body;
 
       // Validasi input
       if (!title || !url) {
@@ -91,6 +92,7 @@ export default async function handler(
         data: {
           title: title.trim(),
           url: url.trim(),
+          iconUrl: iconUrl?.trim() || null,
           userId: user.id,
           categoryId: categoryId || null,
           tags: tags || [],
@@ -99,6 +101,7 @@ export default async function handler(
           id: true,
           title: true,
           url: true,
+          iconUrl: true,
           categoryId: true,
           tags: true,
           clickCount: true,

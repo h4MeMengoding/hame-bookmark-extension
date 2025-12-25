@@ -10,11 +10,13 @@
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "test:favicon": "node test-favicon-api.js"
   },
   "dependencies": {
     "@prisma/client": "^5.7.1",
     "@supabase/supabase-js": "^2.39.0",
+    "cheerio": "^1.1.2",
     "next": "14.0.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

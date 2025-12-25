@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { LogIn, Mail, Lock, Loader2, UserPlus } from 'lucide-react';
 import { login, signup } from '../services/auth';
 import Toast from '../components/Toast';
+import { LoadingSpinner } from '../components/LoadingAnimation';
 
 const LoginPage = ({ onLoginSuccess }) => {
   const [isSignup, setIsSignup] = useState(false);
@@ -112,7 +113,7 @@ const LoginPage = ({ onLoginSuccess }) => {
             >
               {isLoading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" strokeWidth={3} />
+                  <LoadingSpinner size="md" color="black" />
                   {isSignup ? 'Creating Account...' : 'Signing in...'}
                 </>
               ) : (

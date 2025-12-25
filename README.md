@@ -329,8 +329,20 @@ MIT
 
 - **[INSTALL.md](INSTALL.md)** - Panduan instalasi untuk user
 - **[SECURITY.md](SECURITY.md)** - Security best practices
-- **[PERSISTENT_AUTH.md](PERSISTENT_AUTH.md)** - Implementasi persistent authentication
+- **[PERSISTENT_AUTH.md](PERSISTENT_AUTH.md)** - Implementasi persistent authentication- **[FAVICON_SYSTEM.md](FAVICON_SYSTEM.md)** - 🆕 Sistem favicon otomatis (100% dari HTML)
+- **[DEPLOYMENT_FAVICON.md](DEPLOYMENT_FAVICON.md)** - 🆕 Deployment guide untuk favicon system
 
+## 🎨 Features Highlight
+
+### ✨ Automatic Favicon Detection
+Extension ini menggunakan sistem favicon **100% otomatis** yang:
+- ✅ Mengambil favicon langsung dari HTML website asli
+- ✅ Akurat per halaman (Google Sheets ≠ Google Drive)
+- ✅ Tidak menggunakan Google Favicon API atau DuckDuckGo
+- ✅ Cache 2-layer (backend + frontend) untuk performa optimal
+- ✅ Fallback strategy untuk reliability
+
+**Lihat:** [FAVICON_SYSTEM.md](FAVICON_SYSTEM.md) untuk detail lengkap.
 ## �👨‍💻 Developer
 
 Built with ❤️ by Senior Fullstack Engineer
