@@ -2,6 +2,7 @@
 
 const STORAGE_KEYS = {
   AUTH_TOKEN: 'auth_token',
+  REFRESH_TOKEN: 'refresh_token',
   USER_DATA: 'user_data',
 };
 
@@ -40,6 +41,45 @@ export const removeToken = async () => {
     return true;
   } catch (error) {
     console.error('Error removing token:', error);
+    return false;
+  }
+};
+
+/**
+ * Simpan refresh token ke chrome.storage.local
+ */
+export const saveRefreshToken = async (refreshToken) => {
+  try {
+    await chrome.storage.local.set({ [STORAGE_KEYS.REFRESH_TOKEN]: refreshToken });
+    return true;
+  } catch (error) {
+    console.error('Error saving refresh token:', error);
+    return false;
+  }
+};
+
+/**
+ * Ambil refresh token dari chrome.storage.local
+ */
+export const getRefreshToken = async () => {
+  try {
+    const result = await chrome.storage.local.get(STORAGE_KEYS.REFRESH_TOKEN);
+    return result[STORAGE_KEYS.REFRESH_TOKEN] || null;
+  } catch (error) {
+    console.error('Error getting refresh token:', error);
+    return null;
+  }
+};
+
+/**
+ * Hapus refresh token dari chrome.storage.local
+ */
+export const removeRefreshToken = async () => {
+  try {
+    await chrome.storage.local.remove(STORAGE_KEYS.REFRESH_TOKEN);
+    return true;
+  } catch (error) {
+    console.error('Error removing refresh token:', error);
     return false;
   }
 };

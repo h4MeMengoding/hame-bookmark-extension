@@ -4,6 +4,8 @@ import { prisma } from '../../../lib/prisma';
 
 type SignupResponse = {
   token: string;
+  refreshToken: string;
+  expiresIn: number;
   user: {
     id: string;
     email: string;
@@ -108,25 +110,17 @@ export default async function handler(
 
     if (loginError || !loginData.session) {
       console.error('Auto-login error:', loginError);
-      // If auto-login fails, generate temporary token
-      const tempToken = Buffer.from(JSON.stringify({
-        userId: user.id,
-        email: user.email,
-        timestamp: Date.now(),
-      })).toString('base64');
-
-      return res.status(201).json({
-        token: tempToken,
-        user: {
-          id: user.id,
-          email: user.email,
-        },
+      // If auto-login fails, return error - user harus login manual
+      return res.status(500).json({
+        error: 'Account created but auto-login failed. Please login manually.',
       });
     }
 
-    // Return session token dari login
+    // Return session token, refresh token, dan user data
     return res.status(201).json({
       token: loginData.session.access_token,
+      refreshToken: loginData.session.refresh_token,
+      expiresIn: loginData.session.expires_in || 3600,
       user: {
         id: user.id,
         email: user.email,

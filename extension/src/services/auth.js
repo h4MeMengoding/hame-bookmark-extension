@@ -1,7 +1,7 @@
 // Authentication service
 
 import { post } from './api';
-import { saveToken, removeToken, saveUserData, removeUserData, getToken } from './storage';
+import { saveToken, removeToken, saveUserData, removeUserData, getToken, saveRefreshToken, removeRefreshToken, getRefreshToken } from './storage';
 
 /**
  * Signup user baru
@@ -10,8 +10,9 @@ export const signup = async (email, password) => {
   try {
     const data = await post('/api/auth/signup', { email, password });
     
-    // Simpan token dan user data ke chrome.storage
+    // Simpan token, refresh token, dan user data ke chrome.storage
     await saveToken(data.token);
+    await saveRefreshToken(data.refreshToken);
     await saveUserData(data.user);
     
     return { success: true, data };
@@ -30,8 +31,9 @@ export const login = async (email, password) => {
   try {
     const data = await post('/api/auth/login', { email, password });
     
-    // Simpan token dan user data ke chrome.storage
+    // Simpan token, refresh token, dan user data ke chrome.storage
     await saveToken(data.token);
+    await saveRefreshToken(data.refreshToken);
     await saveUserData(data.user);
     
     return { success: true, data };
@@ -48,8 +50,9 @@ export const login = async (email, password) => {
  */
 export const logout = async () => {
   try {
-    // Hapus token dan user data dari storage
+    // Hapus token, refresh token, dan user data dari storage
     await removeToken();
+    await removeRefreshToken();
     await removeUserData();
     return { success: true };
   } catch (error) {
@@ -83,5 +86,37 @@ export const validateToken = async (token) => {
     // Token invalid atau expired
     console.error('Token validation failed:', error);
     return false;
+  }
+};
+
+/**
+ * Refresh access token menggunakan refresh token
+ * Return { success: true, token } jika berhasil, { success: false } jika gagal
+ */
+export const refreshAccessToken = async () => {
+  try {
+    const refreshToken = await getRefreshToken();
+    
+    if (!refreshToken) {
+      console.error('No refresh token available');
+      return { success: false };
+    }
+
+    // Request new access token
+    const data = await post('/api/auth/refresh', { refreshToken });
+    
+    // Simpan new access token dan refresh token
+    await saveToken(data.token);
+    await saveRefreshToken(data.refreshToken);
+    
+    console.log('Token refreshed successfully');
+    return { success: true, token: data.token };
+  } catch (error) {
+    console.error('Token refresh failed:', error);
+    // Jika refresh gagal, hapus semua token (force logout)
+    await removeToken();
+    await removeRefreshToken();
+    await removeUserData();
+    return { success: false };
   }
 };

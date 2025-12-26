@@ -83,19 +83,20 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, onEdit, viewMode = 'compact'
   const colors = ['neo-yellow', 'neo-pink', 'neo-blue', 'neo-green', 'neo-purple', 'neo-orange'];
   // Use category color if available, otherwise use random color based on bookmark id
   const cardColor = category?.color || colors[bookmark.id.charCodeAt(0) % colors.length];
+  const isHex = typeof cardColor === 'string' && cardColor.startsWith('#');
+  const bgClass = isHex ? '' : `bg-${cardColor}`;
 
   // Detail View
   if (viewMode === 'detail') {
+
     return (
       <div
         onClick={handleClick}
         onContextMenu={handleRightClick}
-        className={`
-          bg-${cardColor} rounded-xl p-3 border-3 border-black 
-          shadow-brutal hover:shadow-brutal-sm cursor-pointer 
-          transition-all active:shadow-none
-          ${deleteMode ? 'hover:bg-red-100' : ''}
-        `}
+        className={
+          `${bgClass} rounded-xl p-3 border-3 border-black shadow-brutal hover:shadow-brutal-sm cursor-pointer transition-all active:shadow-none ${deleteMode ? 'hover:bg-red-100' : ''}`
+        }
+        style={isHex ? { backgroundColor: cardColor } : undefined}
       >
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-lg bg-white border-3 border-black flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -144,13 +145,10 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, onEdit, viewMode = 'compact'
         `}
       >
         {/* Icon Container */}
-        <div className={`
-          w-14 h-14 rounded-xl bg-${cardColor} border-3 border-black 
-          shadow-brutal-sm hover:shadow-brutal 
-          flex items-center justify-center 
-          overflow-hidden mb-1.5
-          transition-all
-        `}>
+        <div
+          className={`w-14 h-14 rounded-xl ${bgClass} border-3 border-black shadow-brutal-sm hover:shadow-brutal flex items-center justify-center overflow-hidden mb-1.5 transition-all`}
+          style={isHex ? { backgroundColor: cardColor } : undefined}
+        >
           {faviconLoading ? (
             <ImageLoading />
           ) : faviconUrl && faviconUrl !== DEFAULT_FAVICON ? (

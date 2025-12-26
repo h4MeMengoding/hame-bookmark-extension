@@ -4,6 +4,8 @@ import { prisma } from '../../../lib/prisma';
 
 type LoginResponse = {
   token: string;
+  refreshToken: string;
+  expiresIn: number;
   user: {
     id: string;
     email: string;
@@ -59,9 +61,11 @@ export default async function handler(
       });
     }
 
-    // Return token dan user data
+    // Return access token, refresh token, dan user data
     return res.status(200).json({
       token: data.session.access_token,
+      refreshToken: data.session.refresh_token,
+      expiresIn: data.session.expires_in || 3600,
       user: {
         id: user.id,
         email: user.email,

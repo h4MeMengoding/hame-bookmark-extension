@@ -2,11 +2,15 @@
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+// Flag to prevent concurrent refresh attempts
+let isRefreshing = false;
+let refreshPromise = null;
+
 /**
- * Make API request dengan authentication
+ * Make API request dengan authentication dan auto-refresh token
  */
 export const apiRequest = async (endpoint, options = {}) => {
-  const { method = 'GET', body, token, headers = {} } = options;
+  const { method = 'GET', body, token, headers = {}, isRetry = false } = options;
 
   const config = {
     method,
@@ -32,10 +36,39 @@ export const apiRequest = async (endpoint, options = {}) => {
     const data = await response.json();
 
     if (!response.ok) {
-      // Jika token invalid/expired (401), hanya throw error
-      // Biarkan user tetap login sampai logout manual
-      if (response.status === 401) {
-        console.warn('Request unauthorized - token mungkin invalid');
+      // Jika 401 Unauthorized dan bukan retry, coba refresh token
+      if (response.status === 401 && !isRetry && endpoint !== '/api/auth/refresh') {
+        console.warn('Token expired, attempting refresh...');
+        
+        // Prevent multiple concurrent refreshes
+        if (isRefreshing) {
+          await refreshPromise;
+        } else {
+          isRefreshing = true;
+          refreshPromise = (async () => {
+            try {
+              const { refreshAccessToken } = await import('./auth');
+              const result = await refreshAccessToken();
+              
+              if (result.success) {
+                // Retry original request dengan new token
+                return await apiRequest(endpoint, { 
+                  ...options, 
+                  token: result.token, 
+                  isRetry: true 
+                });
+              } else {
+                // Refresh gagal - user harus login ulang
+                throw new Error('Session expired. Please login again.');
+              }
+            } finally {
+              isRefreshing = false;
+              refreshPromise = null;
+            }
+          })();
+          
+          return await refreshPromise;
+        }
       }
       
       throw new Error(data.error || `HTTP error! status: ${response.status}`);
