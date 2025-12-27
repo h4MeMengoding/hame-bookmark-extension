@@ -1,4 +1,5 @@
 // Storage service untuk mengelola chrome.storage.local
+// Fallback ke localStorage ketika dijalankan di browser (dev)
 
 const STORAGE_KEYS = {
   AUTH_TOKEN: 'auth_token',
@@ -9,9 +10,21 @@ const STORAGE_KEYS = {
 /**
  * Simpan token ke chrome.storage.local
  */
+const hasExtensionStorage = () => {
+  try {
+    return typeof chrome !== 'undefined' && chrome && chrome.storage && chrome.storage.local;
+  } catch (e) {
+    return false;
+  }
+};
+
 export const saveToken = async (token) => {
   try {
-    await chrome.storage.local.set({ [STORAGE_KEYS.AUTH_TOKEN]: token });
+    if (hasExtensionStorage()) {
+      await chrome.storage.local.set({ [STORAGE_KEYS.AUTH_TOKEN]: token });
+    } else {
+      localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+    }
     return true;
   } catch (error) {
     console.error('Error saving token:', error);
@@ -24,8 +37,12 @@ export const saveToken = async (token) => {
  */
 export const getToken = async () => {
   try {
-    const result = await chrome.storage.local.get(STORAGE_KEYS.AUTH_TOKEN);
-    return result[STORAGE_KEYS.AUTH_TOKEN] || null;
+    if (hasExtensionStorage()) {
+      const result = await chrome.storage.local.get(STORAGE_KEYS.AUTH_TOKEN);
+      return result[STORAGE_KEYS.AUTH_TOKEN] || null;
+    } else {
+      return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || null;
+    }
   } catch (error) {
     console.error('Error getting token:', error);
     return null;
@@ -37,7 +54,11 @@ export const getToken = async () => {
  */
 export const removeToken = async () => {
   try {
-    await chrome.storage.local.remove(STORAGE_KEYS.AUTH_TOKEN);
+    if (hasExtensionStorage()) {
+      await chrome.storage.local.remove(STORAGE_KEYS.AUTH_TOKEN);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    }
     return true;
   } catch (error) {
     console.error('Error removing token:', error);
@@ -50,7 +71,11 @@ export const removeToken = async () => {
  */
 export const saveRefreshToken = async (refreshToken) => {
   try {
-    await chrome.storage.local.set({ [STORAGE_KEYS.REFRESH_TOKEN]: refreshToken });
+    if (hasExtensionStorage()) {
+      await chrome.storage.local.set({ [STORAGE_KEYS.REFRESH_TOKEN]: refreshToken });
+    } else {
+      localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+    }
     return true;
   } catch (error) {
     console.error('Error saving refresh token:', error);
@@ -63,8 +88,12 @@ export const saveRefreshToken = async (refreshToken) => {
  */
 export const getRefreshToken = async () => {
   try {
-    const result = await chrome.storage.local.get(STORAGE_KEYS.REFRESH_TOKEN);
-    return result[STORAGE_KEYS.REFRESH_TOKEN] || null;
+    if (hasExtensionStorage()) {
+      const result = await chrome.storage.local.get(STORAGE_KEYS.REFRESH_TOKEN);
+      return result[STORAGE_KEYS.REFRESH_TOKEN] || null;
+    } else {
+      return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) || null;
+    }
   } catch (error) {
     console.error('Error getting refresh token:', error);
     return null;
@@ -76,7 +105,11 @@ export const getRefreshToken = async () => {
  */
 export const removeRefreshToken = async () => {
   try {
-    await chrome.storage.local.remove(STORAGE_KEYS.REFRESH_TOKEN);
+    if (hasExtensionStorage()) {
+      await chrome.storage.local.remove(STORAGE_KEYS.REFRESH_TOKEN);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    }
     return true;
   } catch (error) {
     console.error('Error removing refresh token:', error);
@@ -89,7 +122,11 @@ export const removeRefreshToken = async () => {
  */
 export const saveUserData = async (userData) => {
   try {
-    await chrome.storage.local.set({ [STORAGE_KEYS.USER_DATA]: userData });
+    if (hasExtensionStorage()) {
+      await chrome.storage.local.set({ [STORAGE_KEYS.USER_DATA]: userData });
+    } else {
+      localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
+    }
     return true;
   } catch (error) {
     console.error('Error saving user data:', error);
@@ -102,8 +139,13 @@ export const saveUserData = async (userData) => {
  */
 export const getUserData = async () => {
   try {
-    const result = await chrome.storage.local.get(STORAGE_KEYS.USER_DATA);
-    return result[STORAGE_KEYS.USER_DATA] || null;
+    if (hasExtensionStorage()) {
+      const result = await chrome.storage.local.get(STORAGE_KEYS.USER_DATA);
+      return result[STORAGE_KEYS.USER_DATA] || null;
+    } else {
+      const raw = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+      return raw ? JSON.parse(raw) : null;
+    }
   } catch (error) {
     console.error('Error getting user data:', error);
     return null;
@@ -115,7 +157,11 @@ export const getUserData = async () => {
  */
 export const removeUserData = async () => {
   try {
-    await chrome.storage.local.remove(STORAGE_KEYS.USER_DATA);
+    if (hasExtensionStorage()) {
+      await chrome.storage.local.remove(STORAGE_KEYS.USER_DATA);
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+    }
     return true;
   } catch (error) {
     console.error('Error removing user data:', error);
@@ -128,7 +174,11 @@ export const removeUserData = async () => {
  */
 export const clearStorage = async () => {
   try {
-    await chrome.storage.local.clear();
+    if (hasExtensionStorage()) {
+      await chrome.storage.local.clear();
+    } else {
+      localStorage.clear();
+    }
     return true;
   } catch (error) {
     console.error('Error clearing storage:', error);

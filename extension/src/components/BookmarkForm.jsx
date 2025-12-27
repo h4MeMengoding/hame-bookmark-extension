@@ -263,17 +263,25 @@ const BookmarkForm = ({ onSubmit, onCancel, categories = [], onCreateCategory, d
               <div className="absolute top-full left-0 right-0 mt-2 bg-white border-3 border-black rounded-lg shadow-brutal max-h-48 overflow-y-auto z-20">
                 {/* Filtered Categories */}
                 {filteredCategories.length > 0 ? (
-                  filteredCategories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => handleSelectCategory(cat)}
-                      className="w-full text-left px-4 py-3 hover:bg-neo-cream transition-colors border-b-2 border-black last:border-b-0 font-semibold text-black flex items-center gap-2"
-                    >
-                      <div className={`w-4 h-4 rounded border-2 border-black bg-${cat.color || 'neo-yellow'}`}></div>
-                      {cat.name}
-                    </button>
-                  ))
+                  filteredCategories.map((cat) => {
+                    const colorValue = cat.color || 'neo-yellow';
+                    const isHex = typeof colorValue === 'string' && colorValue.startsWith('#');
+                    const bgClass = !isHex ? `bg-${colorValue}` : '';
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => handleSelectCategory(cat)}
+                        className="w-full text-left px-4 py-3 hover:bg-neo-cream transition-colors border-b-2 border-black last:border-b-0 font-semibold text-black flex items-center gap-2"
+                      >
+                        <div
+                          className={`w-4 h-4 rounded border-2 border-black ${bgClass}`}
+                          style={isHex ? { backgroundColor: colorValue } : undefined}
+                        ></div>
+                        {cat.name}
+                      </button>
+                    );
+                  })
                 ) : (
                   <div className="px-4 py-3 text-black font-semibold">
                     {categorySearch.trim() ? (

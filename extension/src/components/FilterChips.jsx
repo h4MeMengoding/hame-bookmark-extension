@@ -20,22 +20,14 @@ const FilterChips = ({ activeFilters, onFilterChange, categories, onAddCategory,
       onFilterChange(['all']);
       return;
     }
-
-    // Remove 'all' if it exists
-    let newFilters = activeFilters.filter(f => f !== 'all');
-
-    // Toggle the clicked filter
-    if (newFilters.includes(filterId)) {
-      newFilters = newFilters.filter(f => f !== filterId);
-      // If no filters left, default to 'all'
-      if (newFilters.length === 0) {
-        newFilters = ['all'];
-      }
+    // Enforce single-select: selecting a category activates only that one.
+    // If clicked the currently active category, revert to 'all'.
+    const currentlyActive = activeFilters.includes(filterId);
+    if (currentlyActive) {
+      onFilterChange(['all']);
     } else {
-      newFilters = [...newFilters, filterId];
+      onFilterChange([filterId]);
     }
-
-    onFilterChange(newFilters);
   };
 
   const isActive = (filterId) => {
@@ -62,6 +54,9 @@ const FilterChips = ({ activeFilters, onFilterChange, categories, onAddCategory,
       <div className="flex items-center gap-2 flex-wrap">
         {allFilters.map((filter) => {
           const active = isActive(filter.id);
+          const colorValue = filter.color;
+          const isHex = typeof colorValue === 'string' && colorValue.startsWith('#');
+          const bgClass = !isHex ? `bg-${colorValue}` : '';
           return (
             <button
               key={filter.id}
@@ -69,11 +64,9 @@ const FilterChips = ({ activeFilters, onFilterChange, categories, onAddCategory,
               className={`
                 px-4 py-2 rounded-lg font-bold text-sm border-3 border-black 
                 transition-all relative
-                ${active
-                  ? `bg-${filter.color} shadow-brutal` 
-                  : 'bg-white shadow-brutal-sm hover:shadow-brutal'
-                }
+                ${active ? ` ${bgClass} shadow-brutal` : 'bg-white shadow-brutal-sm hover:shadow-brutal'}
               `}
+              style={isHex && active ? { backgroundColor: colorValue } : undefined}
             >
               {active && filter.id !== 'all' && (
                 <Check className="inline-block w-4 h-4 mr-1" strokeWidth={3} />

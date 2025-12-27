@@ -26,10 +26,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     
     else if (req.method === 'POST') {
       // Create new category
-      const { name, color } = req.body;
+      let { name, color } = req.body;
 
       if (!name || typeof name !== 'string' || name.trim().length === 0) {
         return res.status(400).json({ error: 'Category name is required' });
+      }
+
+      name = name.trim();
+
+      // Validate color: accept hex (#rrggbb or #rgb) or allowed token names
+      const allowedTokens = ['neo-blue','neo-pink','neo-green','neo-yellow','neo-purple','neo-orange'];
+      const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+
+      if (typeof color === 'string') {
+        color = color.trim();
+        if (hexRegex.test(color)) {
+          // normalize hex to lowercase full 6-char (#rrggbb)
+          if (color.length === 4) {
+            // Expand #rgb -> #rrggbb
+            color = '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+          }
+          color = color.toLowerCase();
+        } else if (!allowedTokens.includes(color)) {
+          // Unknown format -> fallback
+          color = 'neo-blue';
+        }
+      } else {
+        color = 'neo-blue';
       }
 
       // Check if category already exists
@@ -37,7 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: {
           userId_name: {
             userId: user.id,
-            name: name.trim(),
+            name,
           },
         },
       });
@@ -48,8 +71,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const category = await prisma.category.create({
         data: {
-          name: name.trim(),
-          color: color || 'neo-blue',
+          name,
+          color,
           userId: user.id,
         },
       });
