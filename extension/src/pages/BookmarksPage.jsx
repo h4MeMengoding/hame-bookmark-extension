@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Bookmark, Plus, LogOut, Loader2 } from 'lucide-react';
 import { get, post, put, del } from '../services/api';
 import { getToken, clearStorage, getUserData } from '../services/storage';
+import { clearFaviconCache } from '../services/favicon';
 import Header from '../components/Header';
 import BookmarkForm from '../components/BookmarkForm';
 import BookmarkCard from '../components/BookmarkCard';
@@ -19,6 +20,7 @@ const BookmarksPage = ({ onLogout }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [error, setError] = useState('');
   const [errorNotification, setErrorNotification] = useState('');
@@ -75,7 +77,19 @@ const BookmarksPage = ({ onLogout }) => {
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await fetchBookmarks(false);
+    try {
+      // Refresh bookmarks, categories and user data in parallel
+      await Promise.all([
+        fetchBookmarks(false),
+        fetchCategories(),
+        fetchUserData(),
+      ]);
+
+      // Clear frontend favicon cache so icons reload
+      try { clearFaviconCache(); } catch (e) { /* ignore */ }
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const handleAddUrlInCategory = () => {
@@ -135,6 +149,33 @@ const BookmarksPage = ({ onLogout }) => {
         : 'Failed to add category';
       setErrorNotification(errorMsg);
       console.error('Add category error:', err);
+      return null;
+    }
+  };
+
+  const handleEditCategoryOpen = (category) => {
+    setEditingCategory(category);
+    setShowCategoryForm(true);
+  };
+
+  const handleUpdateCategory = async (name, color, id) => {
+    try {
+      const token = await getToken();
+      const categoryId = id || (editingCategory && editingCategory.id);
+      if (!categoryId) throw new Error('Missing category id');
+      const updated = await put(`/api/categories/${categoryId}`, { name, color }, token);
+      // Replace category in state
+      setCategories(categories.map(c => c.id === updated.category.id ? updated.category : c));
+      setShowCategoryForm(false);
+      setEditingCategory(null);
+      setToast({ type: 'success', message: 'Category updated!' });
+      return updated.category;
+    } catch (err) {
+      const errorMsg = err.message === 'Failed to fetch'
+        ? 'Cannot update category. Backend server is down.'
+        : 'Failed to update category';
+      setErrorNotification(errorMsg);
+      console.error('Update category error:', err);
       return null;
     }
   };
@@ -298,8 +339,9 @@ const BookmarksPage = ({ onLogout }) => {
         {showCategoryForm && (
           <div className="fade-in">
             <CategoryForm
-              onSubmit={handleAddCategory}
-              onCancel={() => setShowCategoryForm(false)}
+              onSubmit={editingCategory ? handleUpdateCategory : handleAddCategory}
+              onCancel={() => { setShowCategoryForm(false); setEditingCategory(null); }}
+              category={editingCategory}
             />
           </div>
         )}
@@ -311,6 +353,7 @@ const BookmarksPage = ({ onLogout }) => {
             onFilterChange={setActiveFilters}
             categories={categories}
             onAddCategory={() => setShowCategoryForm(!showCategoryForm)}
+            onEditCategory={handleEditCategoryOpen}
             sortBy={sortBy}
             onSortChange={setSortBy}
           />

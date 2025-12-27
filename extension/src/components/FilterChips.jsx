@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Plus, Check } from 'lucide-react';
 
-const FilterChips = ({ activeFilters, onFilterChange, categories, onAddCategory, sortBy, onSortChange }) => {
+const FilterChips = ({ activeFilters, onFilterChange, categories, onAddCategory, onEditCategory, sortBy, onSortChange }) => {
   const defaultFilters = [
     { id: 'all', label: 'All', color: 'neo-cream' },
   ];
@@ -61,12 +61,20 @@ const FilterChips = ({ activeFilters, onFilterChange, categories, onAddCategory,
             <button
               key={filter.id}
               onClick={() => handleFilterClick(filter.id)}
+              onContextMenu={(e) => {
+                // Open edit form on right-click for custom categories (not 'all')
+                if (filter.id !== 'all' && typeof onEditCategory === 'function') {
+                  e.preventDefault();
+                  const cat = categories.find(c => c.id === filter.id);
+                  if (cat) onEditCategory(cat);
+                }
+              }}
               className={`
                 px-4 py-2 rounded-lg font-bold text-sm border-3 border-black 
                 transition-all relative
-                ${active ? ` ${bgClass} shadow-brutal` : 'bg-white shadow-brutal-sm hover:shadow-brutal'}
+                ${bgClass} ${active ? 'shadow-brutal' : 'shadow-brutal-sm hover:shadow-brutal'}
               `}
-              style={isHex && active ? { backgroundColor: colorValue } : undefined}
+              style={isHex ? { backgroundColor: colorValue } : undefined}
             >
               {active && filter.id !== 'all' && (
                 <Check className="inline-block w-4 h-4 mr-1" strokeWidth={3} />

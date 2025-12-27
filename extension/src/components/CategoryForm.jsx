@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, X, Tag, Plus } from 'lucide-react';
 
-const CategoryForm = ({ onSubmit, onCancel }) => {
-  const [name, setName] = useState('');
-  const [color, setColor] = useState('neo-blue');
-  const [customHex, setCustomHex] = useState('#ff0000');
+const CategoryForm = ({ onSubmit, onCancel, category }) => {
+  const [name, setName] = useState(category?.name || '');
+  const [color, setColor] = useState(category?.color || 'neo-blue');
+  const [customHex, setCustomHex] = useState(typeof category?.color === 'string' && category.color.startsWith('#') ? category.color : '#ff0000');
   const [showPicker, setShowPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -26,7 +26,8 @@ const CategoryForm = ({ onSubmit, onCancel }) => {
 
     setIsSubmitting(true);
     try {
-      await onSubmit(name.trim(), color);
+      // Call onSubmit(name, color, id?) - if `category` provided, form is in edit mode
+      await onSubmit(name.trim(), color, category?.id);
       setName('');
       setColor('neo-blue');
     } catch (error) {
@@ -35,6 +36,15 @@ const CategoryForm = ({ onSubmit, onCancel }) => {
       setIsSubmitting(false);
     }
   };
+
+  // Keep form in sync if `category` prop changes (open edit form)
+  useEffect(() => {
+    setName(category?.name || '');
+    setColor(category?.color || 'neo-blue');
+    if (typeof category?.color === 'string' && category.color.startsWith('#')) {
+      setCustomHex(category.color);
+    }
+  }, [category]);
 
   return (
     <div className="bg-white rounded-xl p-6 border-4 border-black shadow-brutal fade-in mb-4">
