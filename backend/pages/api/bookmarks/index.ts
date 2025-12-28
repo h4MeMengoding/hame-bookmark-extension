@@ -53,6 +53,7 @@ export default async function handler(
           tags: true,
           clickCount: true,
           createdAt: true,
+          updatedAt: true,
           category: {
             select: {
               id: true,
@@ -67,6 +68,7 @@ export default async function handler(
         bookmarks: bookmarks.map(b => ({
           ...b,
           createdAt: b.createdAt.toISOString(),
+          updatedAt: b.updatedAt.toISOString(),
         })),
       });
     }
@@ -106,6 +108,7 @@ export default async function handler(
           tags: true,
           clickCount: true,
           createdAt: true,
+          updatedAt: true,
           category: {
             select: {
               id: true,
@@ -120,6 +123,7 @@ export default async function handler(
         bookmark: {
           ...bookmark,
           createdAt: bookmark.createdAt.toISOString(),
+          updatedAt: bookmark.updatedAt.toISOString(),
         },
       });
     }

@@ -69,7 +69,7 @@ const BookmarkCard = ({ bookmark, onOpen, onDelete, onEdit, viewMode = 'compact'
     if (deleteMode) {
       handleDelete({ stopPropagation: () => {} });
     } else {
-      onOpen(bookmark.url);
+      onOpen(bookmark.id, bookmark.url);
     }
   };
 

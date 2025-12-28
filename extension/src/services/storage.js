@@ -185,3 +185,39 @@ export const clearStorage = async () => {
     return false;
   }
 };
+
+  /**
+   * Generic setting storage helpers
+   */
+  export const saveSetting = async (key, value) => {
+    try {
+      const k = `setting_${key}`;
+      if (hasExtensionStorage()) {
+        const obj = {};
+        obj[k] = value;
+        await chrome.storage.local.set(obj);
+      } else {
+        localStorage.setItem(k, JSON.stringify(value));
+      }
+      return true;
+    } catch (e) {
+      console.error('Error saving setting:', e);
+      return false;
+    }
+  };
+
+  export const getSetting = async (key) => {
+    try {
+      const k = `setting_${key}`;
+      if (hasExtensionStorage()) {
+        const res = await chrome.storage.local.get(k);
+        return res[k] === undefined ? null : res[k];
+      } else {
+        const raw = localStorage.getItem(k);
+        return raw ? JSON.parse(raw) : null;
+      }
+    } catch (e) {
+      console.error('Error getting setting:', e);
+      return null;
+    }
+  };

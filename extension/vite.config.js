@@ -20,7 +20,16 @@ export default defineConfig(({ command }) => {
             resolve(__dirname, 'manifest.json'),
             resolve(__dirname, 'dist/manifest.json')
           );
-          
+          // Copy background service worker to dist so manifest can load it
+          try {
+            copyFileSync(
+              resolve(__dirname, 'background.js'),
+              resolve(__dirname, 'dist/background.js')
+            );
+          } catch (e) {
+            // ignore if missing
+          }
+
           // Create icons directory if needed
           try {
             mkdirSync(resolve(__dirname, 'dist/icons'), { recursive: true });

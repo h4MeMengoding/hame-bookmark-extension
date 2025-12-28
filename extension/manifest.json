@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Hame Bookmark",
   "description": "A smarter way to manage your bookmarks directly from your extension by ilhame.id",
-  "version": "1.1.13",
+  "version": "1.1.12",
   "author": "IlhameID",
   
   "icons": {
@@ -22,13 +22,18 @@
   
   "permissions": [
     "storage",
-    "tabs"
+    "tabs",
+    "downloads"
   ],
   
   "host_permissions": [
     "https://*/*",
     "http://*/*"
   ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
 
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; img-src 'self' data: https: http:"

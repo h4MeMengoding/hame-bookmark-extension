@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Plus, Check } from 'lucide-react';
 
-const FilterChips = ({ activeFilters, onFilterChange, categories, onAddCategory, onEditCategory, sortBy, onSortChange }) => {
+const FilterChips = ({ activeFilters, onFilterChange, categories, onAddCategory, onEditCategory, sortBy, onSortChange, searchQuery, onSearchChange }) => {
   const defaultFilters = [
     { id: 'all', label: 'All', color: 'neo-cream' },
   ];
@@ -37,17 +37,33 @@ const FilterChips = ({ activeFilters, onFilterChange, categories, onAddCategory,
   return (
     <div className="mb-6 space-y-3">
       {/* Sort Options */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-bold text-black">Sort:</span>
-        <select
-          value={sortBy}
-          onChange={(e) => onSortChange(e.target.value)}
-          className="px-3 py-1.5 rounded-lg border-3 border-black font-bold text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black"
-        >
-          <option value="date">Latest First</option>
-          <option value="alphabetical">A-Z</option>
-          <option value="url">By URL</option>
-        </select>
+      <div className="flex items-center gap-2 justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold text-black">Sort:</span>
+          <select
+            value={sortBy}
+            onChange={(e) => onSortChange(e.target.value)}
+            className="px-3 py-1.5 rounded-lg border-3 border-black font-bold text-sm bg-white focus:outline-none focus:ring-2 focus:ring-black"
+          >
+            <option value="date">Last Added</option>
+            <option value="alphabetical">A-Z</option>
+            <option value="most-clicked">Most Clicked</option>
+            <option value="last-click">Last Open</option>
+          </select>
+        </div>
+
+        {/* Search input moved here from Header */}
+        <div className="max-w-xs w-full ml-4">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Search bookmarks..."
+              className="w-full pl-3 pr-4 py-1.5 rounded-lg border-3 border-black font-bold text-sm focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
+        </div>
       </div>
 
       {/* Filter Chips */}

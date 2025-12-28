@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Bookmark, Plus, LogOut, Loader2 } from 'lucide-react';
 import { get, post, put, del } from '../services/api';
-import { getToken, clearStorage, getUserData } from '../services/storage';
+import { getToken, clearStorage, getUserData, saveSetting, getSetting } from '../services/storage';
 import { clearFaviconCache } from '../services/favicon';
 import Header from '../components/Header';
 import BookmarkForm from '../components/BookmarkForm';
@@ -12,6 +12,7 @@ import ErrorNotification from '../components/ErrorNotification';
 import ProfileMenu from '../components/ProfileMenu';
 import Toast from '../components/Toast';
 import LoadingAnimation from '../components/LoadingAnimation';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const BookmarksPage = ({ onLogout }) => {
   const [bookmarks, setBookmarks] = useState([]);
@@ -29,21 +30,78 @@ const BookmarksPage = ({ onLogout }) => {
   const [deleteMode, setDeleteMode] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toast, setToast] = useState(null);
+  const [updateDialog, setUpdateDialog] = useState(null);
+  const [manifestVersion, setManifestVersion] = useState(null);
   const [defaultCategory, setDefaultCategory] = useState(null);
   const [editingBookmark, setEditingBookmark] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState('date'); // 'date', 'alphabetical', 'url'
+  const [sortBy, setSortBy] = useState('date'); // 'date', 'alphabetical', 'most-clicked', 'last-click'
   const [activeFilters, setActiveFilters] = useState(['all']); // Array for multi-select
 
   useEffect(() => {
     fetchBookmarks();
     fetchCategories();
     fetchUserData();
+    // fetch manifest version for footer
+    (async () => {
+      // load persisted UI settings (sortBy)
+      try {
+        const savedSort = await getSetting('sortBy');
+        if (savedSort) setSortBy(savedSort);
+      } catch (e) {
+        // ignore
+      }
+      try {
+        const mfRes = await fetch('/manifest.json');
+        if (mfRes.ok) {
+          const mfJson = await mfRes.json();
+          setManifestVersion(mfJson.version);
+          return;
+        }
+      } catch (e) {
+        // ignore
+      }
+      try {
+        if (chrome && chrome.runtime && chrome.runtime.getManifest) {
+          const mf = chrome.runtime.getManifest();
+          setManifestVersion(mf.version);
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
   }, []);
+
+  const handleSortChange = (value) => {
+    setSortBy(value);
+    saveSetting('sortBy', value).catch(() => {});
+  };
 
   const fetchUserData = async () => {
     const userData = await getUserData();
     setUser(userData);
+  };
+
+  const handleUpdateDialogConfirm = () => {
+    if (!updateDialog) return;
+    if (updateDialog.type === 'no-update') {
+      setUpdateDialog(null);
+      return;
+    }
+    // download
+    const filename = `hame-bookmark-extension-v${updateDialog.current}-update.zip`;
+    chrome.downloads.download({ url: updateDialog.downloadUrl, filename }, (downloadId) => {
+      if (chrome.runtime.lastError) {
+        setErrorNotification(chrome.runtime.lastError.message);
+      } else {
+        setToast({ type: 'success', message: 'Download started. Check your downloads folder.' });
+      }
+    });
+    setUpdateDialog(null);
+  };
+
+  const handleUpdateDialogCancel = () => {
+    setUpdateDialog(null);
   };
 
   const fetchBookmarks = async (showLoading = true) => {
@@ -87,6 +145,81 @@ const BookmarksPage = ({ onLogout }) => {
 
       // Clear frontend favicon cache so icons reload
       try { clearFaviconCache(); } catch (e) { /* ignore */ }
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  const handleCheckUpdate = async () => {
+    try {
+      // If not running as installed extension (dev), open releases page
+      if (typeof chrome === 'undefined' || !chrome.downloads) {
+        window.open('https://github.com/h4MeMengoding/hame-bookmark-extension/releases', '_blank');
+        return;
+      }
+
+      setIsRefreshing(true);
+
+      // Fetch latest release directly from GitHub from the popup
+      const res = await fetch('https://api.github.com/repos/h4MeMengoding/hame-bookmark-extension/releases/latest', {
+        headers: { 'Accept': 'application/vnd.github.v3+json' }
+      });
+      if (!res.ok) throw new Error(`GitHub API error: ${res.status}`);
+      const latest = await res.json();
+        const latestTag = latest.tag_name || latest.name || '';
+        const rawLatest = latestTag.startsWith('v') ? latestTag.slice(1) : latestTag;
+        // Extract numeric semver part (e.g. 1.2.3) from tag like "1.2.3-20251227"
+        const m = rawLatest.match(/^(\d+\.\d+\.\d+)/);
+        const normLatest = m ? m[1] : rawLatest.replace(/[^0-9.].*$/, '');
+
+      const semverCompare = (a, b) => {
+        const pa = a.split('.').map(Number);
+        const pb = b.split('.').map(Number);
+        for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+          const na = pa[i] || 0;
+          const nb = pb[i] || 0;
+          if (na > nb) return 1;
+          if (na < nb) return -1;
+        }
+        return 0;
+      };
+
+      // Try to read manifest.json from extension root (works for both dev and packaged)
+      let current = null;
+      try {
+        const mfRes = await fetch('/manifest.json');
+        if (mfRes.ok) {
+          const mfJson = await mfRes.json();
+          current = mfJson.version;
+        }
+      } catch (e) {
+        // ignore
+      }
+      if (!current && chrome && chrome.runtime && chrome.runtime.getManifest) {
+        const manifest = chrome.runtime.getManifest();
+        current = manifest.version;
+      }
+      if (!current) current = '0.0.0';
+      const cmp = semverCompare(normLatest, current);
+
+      if (cmp <= 0) {
+          // Show custom modal informing no update (display full tag)
+          setUpdateDialog({ type: 'no-update', current, latest: latestTag || normLatest });
+        return;
+      }
+
+      // find zip asset or zipball
+      let downloadUrl = null;
+      if (latest.assets && latest.assets.length > 0) {
+        const zipAsset = latest.assets.find(a => a.name && a.name.endsWith('.zip'));
+        if (zipAsset) downloadUrl = zipAsset.browser_download_url;
+      }
+      if (!downloadUrl && latest.zipball_url) downloadUrl = latest.zipball_url;
+
+      // Open custom dialog to ask user to download
+        setUpdateDialog({ type: 'update-available', current, latest: latestTag || normLatest, downloadUrl });
+    } catch (err) {
+      setErrorNotification(err.message || 'Update check error');
     } finally {
       setIsRefreshing(false);
     }
@@ -196,9 +329,18 @@ const BookmarksPage = ({ onLogout }) => {
     }
   };
 
-  const handleOpenBookmark = (url) => {
-    // Buka URL di tab baru
-    chrome.tabs.create({ url });
+  const handleOpenBookmark = async (id, url) => {
+    try {
+      const token = await getToken();
+      // Fire-and-forget click increment; don't block opening the tab if API fails
+      post(`/api/bookmarks/${id}/click`, null, token).catch((e) => {
+        console.warn('Failed to record click:', e);
+      });
+    } catch (e) {
+      // ignore token errors and still open the url
+    }
+    // Open URL in new tab
+    try { chrome.tabs.create({ url }); } catch (e) { window.open(url, '_blank'); }
   };
 
   const handleLogout = async () => {
@@ -268,12 +410,16 @@ const BookmarksPage = ({ onLogout }) => {
       switch (sortBy) {
         case 'alphabetical':
           return a.title.localeCompare(b.title);
-        case 'url':
-          return a.url.localeCompare(b.url);
+        // 'url' option removed from UI
+        case 'most-clicked':
+          return (b.clickCount || 0) - (a.clickCount || 0);
+        case 'last-click':
+          // Use updatedAt as last-open time
+          return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
         case 'date':
         default:
-          // Newest first (assuming bookmarks have createdAt or use array order)
-          return bookmarks.indexOf(b) - bookmarks.indexOf(a);
+          // Newest first by creation time
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       }
     });
 
@@ -294,9 +440,8 @@ const BookmarksPage = ({ onLogout }) => {
         deleteMode={deleteMode}
         onDeleteModeToggle={() => setDeleteMode(!deleteMode)}
         onRefresh={handleRefresh}
+        onCheckUpdate={handleCheckUpdate}
         isRefreshing={isRefreshing}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
       />
 
       {/* Profile Menu */}
@@ -348,14 +493,16 @@ const BookmarksPage = ({ onLogout }) => {
 
         {/* Filter Chips */}
         {!isLoading && bookmarks.length > 0 && (
-          <FilterChips 
+            <FilterChips 
             activeFilters={activeFilters}
             onFilterChange={setActiveFilters}
             categories={categories}
             onAddCategory={() => setShowCategoryForm(!showCategoryForm)}
             onEditCategory={handleEditCategoryOpen}
             sortBy={sortBy}
-            onSortChange={setSortBy}
+            onSortChange={handleSortChange}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
           />
         )}
 
@@ -465,7 +612,7 @@ const BookmarksPage = ({ onLogout }) => {
       {/* Footer */}
       <div className="fixed bottom-0 left-0 right-0 bg-neo-cream border-t-3 border-black py-2">
         <p className="text-center text-black font-bold text-sm">
-          {bookmarks.length} saved | {import.meta.env.VITE_API_URL?.includes('localhost') ? 'localhost' : 'Production'}
+          {bookmarks.length} saved | {import.meta.env.VITE_API_URL?.includes('localhost') ? 'localhost' : 'production'} | v{manifestVersion || '?.?.?'}
         </p>
       </div>
 
@@ -475,6 +622,21 @@ const BookmarksPage = ({ onLogout }) => {
           type={toast.type}
           message={toast.message}
           onClose={() => setToast(null)}
+        />
+      )}
+
+      {/* Update Dialog (custom modal) */}
+      {updateDialog && (
+        <ConfirmDialog
+          title={updateDialog.type === 'no-update' ? 'No update available' : 'Update available'}
+          message={updateDialog.type === 'no-update'
+            ? `Current: ${updateDialog.current}, Latest: ${updateDialog.latest}`
+            : `Current: ${updateDialog.current}, Latest: ${updateDialog.latest}. Download now?`}
+          onConfirm={handleUpdateDialogConfirm}
+          onCancel={handleUpdateDialogCancel}
+          confirmText={updateDialog.type === 'no-update' ? 'OK' : 'Download'}
+          cancelText={updateDialog.type === 'no-update' ? 'Close' : 'Cancel'}
+          type={updateDialog.type === 'no-update' ? 'info' : 'info'}
         />
       )}
     </div>
