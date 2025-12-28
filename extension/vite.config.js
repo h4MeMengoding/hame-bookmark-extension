@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 import { copyFileSync, mkdirSync } from 'fs';
 
-const DEFAULT_API = 'http://localhost:3000';
+const DEFAULT_API = 'http://188.166.248.22:3001';
 
 export default defineConfig(({ command }) => {
   const isDev = command === 'serve';

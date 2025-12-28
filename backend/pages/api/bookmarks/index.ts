@@ -7,14 +7,26 @@ type BookmarksResponse = {
     id: string;
     title: string;
     url: string;
+    iconUrl?: string | null;
+    categoryId?: string | null;
+    tags?: string[];
+    clickCount?: number;
     createdAt: string;
+    updatedAt: string;
+    category?: { id: string; name: string; color: string } | null;
   }>;
 } | {
   bookmark: {
     id: string;
     title: string;
     url: string;
+    iconUrl?: string | null;
+    categoryId?: string | null;
+    tags?: string[];
+    clickCount?: number;
     createdAt: string;
+    updatedAt: string;
+    category?: { id: string; name: string; color: string } | null;
   };
 } | {
   error: string;
